@@ -1,7 +1,4 @@
-﻿# CMakeList.txt : CMake project for Einstein_Summation, include source and define
-# project specific logic here.
-#
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.8)
 project ("Einstein_Summation")
 
 set(CMAKE_CXX_STANDARD 26)
@@ -16,8 +13,6 @@ else ()
     add_compile_options(-Wall -Wpedantic -Wfatal-errors)
 endif ()
 
-option(getmdspan "Build kokkss MDSpan?" OFF)
-
 include(FetchContent)
 FetchContent_Declare(
         googletest
@@ -26,17 +21,27 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-if (getmdspan)
-    FetchContent_Declare(
-            mdspan
-            GIT_REPOSITORY https://github.com/kokkos/mdspan.git
-            GIT_TAG stable
-    )
-    FetchContent_MakeAvailable(mdspan)
-endif ()
+FetchContent_Declare(
+        mdspan
+        GIT_REPOSITORY https://github.com/kokkos/mdspan.git
+        GIT_TAG stable
+)
+FetchContent_MakeAvailable(mdspan)
 
-add_executable (einsum "src/einsum.cpp")
+add_executable (einsum "src/einsum.cpp"
+        include/array_t.hpp
+        src/array_t.cpp)
 target_include_directories(einsum PRIVATE
         ${mdspan_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include
 )
+
+add_executable(tests tests.cpp)
+target_link_libraries(tests gtest_main)
+target_include_directories(tests PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${mdspan_SOURCE_DIR}/include
+)
+
+add_test(NAME tests COMMAND tests)
+enable_testing()
