@@ -67,4 +67,12 @@ constexpr auto make_label_and_extents_map(const std::vector<std::string_view> &l
   return label_to_dim;
 }
 
+constexpr auto make_iotas(const std::unordered_map<char, size_t>& lmap) {
+  std::vector<std::ranges::iota_view<size_t, size_t>> iotas;
+  iotas.reserve(lmap.size());
+  for (auto [key, index] : lmap) {
+    iotas.push_back(std::ranges::iota_view<size_t, size_t>(0, index));
+  }
+  return iotas;
+}
 
