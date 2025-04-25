@@ -1,0 +1,42 @@
+﻿# CMakeList.txt : CMake project for Einstein_Summation, include source and define
+# project specific logic here.
+#
+cmake_minimum_required (VERSION 3.8)
+project ("Einstein_Summation")
+
+set(CMAKE_CXX_STANDARD 26)
+if (MSVC)
+    if (POLICY CMP0141)
+      cmake_policy(SET CMP0141 NEW)
+      set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+else ()
+    add_compile_options(-Wall -Wpedantic -Wfatal-errors)
+endif ()
+
+option(getmdspan "Build kokkss MDSpan?" OFF)
+
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/5376968f6948923e2411081fd9372e71a59d8e77.zip
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+if (getmdspan)
+    FetchContent_Declare(
+            mdspan
+            GIT_REPOSITORY https://github.com/kokkos/mdspan.git
+            GIT_TAG stable
+    )
+    FetchContent_MakeAvailable(mdspan)
+endif ()
+
+add_executable (einsum "src/einsum.cpp")
+target_include_directories(einsum PRIVATE
+        ${mdspan_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/include
+)
