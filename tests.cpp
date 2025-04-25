@@ -42,5 +42,16 @@ TEST(MapTest, A) {
   ASSERT_EQ(ret.at('k'), 2);
   ASSERT_EQ(ret.at('j'), 4);
   ASSERT_EQ(ret.at('i'), 3);
+
+  auto iotas = make_iotas(ret);
+  std::vector<std::vector<size_t>> prod;
+  cartesian_product(iotas,prod);
+  for (auto p : prod) {
+    for (auto i : p) {
+      std::cout << i << ", ";
+    }
+    std::cout << "\n";
+  }
+  std::cout << prod.size();
 }
 
