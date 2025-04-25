@@ -109,8 +109,23 @@ void cartesian_product(const std::vector<std::vector<size_t>> &vectors,
       current.pop_back();
     }
   };
-
   backtrack(0);
+}
+
+auto index_repeater(const std::vector<char> unique_labels,
+                    const std::vector<std::vector<size_t>> &products) {
+  assert(unique_labels.size() == products.front().size());
+  std::vector<std::unordered_map<char, size_t>> annotated;
+  for (const std::vector<size_t> &product : products) {
+    assert(unique_labels.size() == product.size());
+    std::unordered_map<char, size_t> tmp_map{};
+    for (auto [label, product] :
+         std::ranges::zip_view(unique_labels, product)) {
+      tmp_map.insert({label, product});
+    }
+    annotated.push_back(std::move(tmp_map));
+  }
+  return annotated;
 }
 
 /*

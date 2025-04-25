@@ -38,20 +38,23 @@ TEST(MapTest, A) {
   std::vector<int> b{2,5, 0,1, 5,7, 9,2};
   ArrayT<int,4,2> arr2{b};
 
-  auto ret = make_label_and_extents_map(labels, arr, arr2);
-  ASSERT_EQ(ret.at('k'), 2);
-  ASSERT_EQ(ret.at('j'), 4);
-  ASSERT_EQ(ret.at('i'), 3);
+  auto labelmap = make_label_and_extents_map(labels, arr, arr2);
+  ASSERT_EQ(labelmap.at('k'), 2);
+  ASSERT_EQ(labelmap.at('j'), 4);
+  ASSERT_EQ(labelmap.at('i'), 3);
 
-  auto iotas = make_iotas(ret);
+  auto iotas = make_iotas(labelmap);
   std::vector<std::vector<size_t>> prod;
   cartesian_product(iotas,prod);
-  for (auto p : prod) {
-    for (auto i : p) {
-      std::cout << i << ", ";
+  auto unique_labels = get_map_keys(labelmap);
+  auto repeater = index_repeater(unique_labels,prod);
+  for (auto p : repeater) {
+    for (auto [k, v] : p) {
+      std::cout << k << ":" << v << ", ";
     }
     std::cout << "\n";
   }
-  std::cout << prod.size();
+  std::cout << repeater.size() << "\n";
+
 }
 
