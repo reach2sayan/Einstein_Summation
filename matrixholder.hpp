@@ -8,7 +8,7 @@
 
 template <typename... Ts> class MatrixHolder {
   std::tuple<Ts...> matrices;
-
+  template <typename... Us> friend class Einsum;
 public:
   MatrixHolder(Ts... matrices) : matrices{matrices...} {}
   constexpr size_t num_matrices() { return sizeof...(Ts); }

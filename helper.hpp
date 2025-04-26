@@ -7,6 +7,8 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+#include <numeric>
+#include <functional>
 
 constexpr std::pair<std::string_view, std::string_view>
 split_arrow(std::string_view str) {
@@ -38,7 +40,6 @@ constexpr auto split_comma(std::string_view str) {
 
 constexpr auto make_label_axis_map(std::string_view str) {
   std::vector<std::pair<char, size_t>> retmap;
-  auto i = 0;
   for (auto [index, c] : std::ranges::enumerate_view(str)) {
     retmap.emplace_back(c, index);
   }
@@ -92,7 +93,7 @@ void fill_label_to_dim_map(const std::vector<std::string_view> &labels,
     (([&] {
        std::string_view label = labels[Is];
        const auto &current_span = std::get<Is>(inputs_tuple);
-       auto shp = current_span.get_shape();
+       auto shp = current_span.extents();
        assert(shp.size() == label.size());
        for (auto &&[lchar, dim] : std::ranges::views::zip(label, shp)) {
          if (!label_to_dim.contains(lchar))
@@ -105,6 +106,17 @@ void fill_label_to_dim_map(const std::vector<std::string_view> &labels,
   }(std::make_index_sequence<N>{});
 }
 
+constexpr auto make_iotas(const std::unordered_map<char, size_t> &lmap) {
+  std::vector<std::vector<size_t>> iotas;
+  iotas.reserve(lmap.size());
+  for (auto &[key, index] : lmap) {
+    std::vector<size_t> tmp(index);
+    std::iota(std::begin(tmp), std::end(tmp), 0);
+    iotas.emplace_back(std::move(tmp));
+  }
+  return iotas;
+}
+
 constexpr auto
 make_label_and_extents_map(const std::vector<std::string_view> &labels,
                            auto &&...inputs) {
@@ -112,6 +124,28 @@ make_label_and_extents_map(const std::vector<std::string_view> &labels,
   auto temp_tuple = std::make_tuple(std::forward<decltype(inputs)>(inputs)...);
   fill_label_to_dim_map(labels, temp_tuple, label_to_dim);
   return label_to_dim;
+}
+
+void cartesian_product(const std::vector<std::vector<size_t>> &vectors,
+                       std::vector<std::vector<size_t>> &result) {
+  if (vectors.empty())
+    return;
+
+  std::vector<size_t> current;
+  size_t depth = 0;
+
+  std::function<void(size_t)> backtrack = [&](size_t index) {
+    if (index == vectors.size()) {
+      result.push_back(current);
+      return;
+    }
+    for (int val : vectors[index]) {
+      current.push_back(val);
+      backtrack(index + 1);
+      current.pop_back();
+    }
+  };
+  backtrack(0);
 }
 
 #endif

@@ -33,8 +33,23 @@ public:
   friend std::ostream &operator<<(std::ostream &out, const Einsum &einsum) {
     out << "\n";
     out << einsum.labels;
+    return out;
   }
-  auto make_result_indices();
+  constexpr std::vector<std::vector<size_t>> make_result_indices() {
+    {
+
+      auto helper = []<size_t... Is>(auto &&inputs, auto &&mat,
+                                     std::index_sequence<Is...>) {
+                                       return make_label_and_extents_map(inputs, std::get<Is>(mat.matrices)...);
+                                     };
+      auto label_map = helper(labels.inputs, matrices,
+                              std::make_index_sequence<sizeof...(Ts)>{});
+      auto iotas = make_iotas(label_map);
+      std::vector<std::vector<size_t>> product;
+      cartesian_product(iotas,product);
+      return product;
+    }
+  }
   bool validate() { return true; }
 };
 

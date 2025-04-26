@@ -21,4 +21,12 @@ int main() {
   Einsum einsum("bhwi,bhwj->bij", mdA, mdB);
   std::cout << einsum;
 
+  auto prod = einsum.make_result_indices();
+  for (auto &&p : prod) {
+    for (auto &&i : p) {
+      std::cout << i << " ";
+    }
+    std::cout << std::endl;
+  }
+
 }
