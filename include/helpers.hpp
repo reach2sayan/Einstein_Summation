@@ -128,6 +128,20 @@ auto index_repeater(const std::vector<char> unique_labels,
   return annotated;
 }
 
+auto get_result_indices(
+    const std::vector<std::unordered_map<char, size_t>> &repeater,
+    std::string_view res_expr) {
+  std::vector<std::vector<std::vector<size_t>>> result_indices;
+  for (const auto& repeat : repeater) {
+    std::vector<std::vector<size_t>> tmp;
+    for (auto c : res_expr) {
+      tmp.push_back(std::vector{repeat.at(c)});
+    }
+    result_indices.push_back(std::vector{std::vector{tmp}});
+  }
+  return result_indices;
+}
+
 /*
 for indices in domain:
     vals = {k: v for v, k in zip(indices, to_key)}

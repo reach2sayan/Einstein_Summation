@@ -46,15 +46,30 @@ TEST(MapTest, A) {
   auto iotas = make_iotas(labelmap);
   std::vector<std::vector<size_t>> prod;
   cartesian_product(iotas,prod);
-  auto unique_labels = get_map_keys(labelmap);
-  auto repeater = index_repeater(unique_labels,prod);
-  for (auto p : repeater) {
-    for (auto [k, v] : p) {
-      std::cout << k << ":" << v << ", ";
+  auto keys = get_map_keys(labelmap);
+  for (auto&& indices : prod) {
+    std::unordered_map<char,size_t> tmp;
+    assert(indices.size() == keys.size());
+    for (auto [keyc, index] : std::ranges::zip_view(keys, indices)) {
+      tmp[keyc] = index;
     }
-    std::cout << "\n";
+    std::vector<std::vector<std::vector<size_t>>> res_indices;
+    for (auto c : bind.second) {
+      std::vector<std::vector<size_t>> tmpp{std::vector<size_t>{tmp.at(c)}};
+      res_indices.push_back(tmpp);
+    }
+
+    std::vector<std::vector<std::vector<std::vector<size_t>>>> out;
+    for (auto&& inp : labels) {
+      std::vector<std::vector<std::vector<size_t>>> res_indices;
+      for (auto c : inp) {
+        std::vector<std::vector<size_t>> tmpp{std::vector<size_t>{tmp.at(c)}};
+        res_indices.push_back(tmpp);
+      }
+      out.push_back(res_indices);
+    }
+
   }
-  std::cout << repeater.size() << "\n";
 
 }
 
