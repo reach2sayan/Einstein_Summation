@@ -2,7 +2,6 @@
 // Created by sayan on 4/25/25.
 //
 #include "einsum.hpp"
-
 #include <algorithm>
 #include <ranges>
 #include <string_view>
