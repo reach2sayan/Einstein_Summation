@@ -60,42 +60,6 @@ make_missing_axis(const std::vector<std::string_view> &inputs,
   return missing;
 }
 
-std::vector<char> constexpr find_common_characters(
-    const std::vector<std::string_view> &strings) {
-  if (strings.empty()) {
-    return {};
-  }
-
-  std::unordered_map<char, int> charCount;
-  for (char c : strings[0]) {
-    charCount[c]++;
-  }
-
-  for (size_t i = 1; i < strings.size(); i++) {
-    std::unordered_map<char, int> currentCount;
-    for (char c : strings[i]) {
-      if (charCount.find(c) != charCount.end()) {
-        currentCount[c]++;
-      }
-    }
-    for (auto &[c, count] : charCount) {
-      auto it = currentCount.find(c);
-      if (it == currentCount.end()) {
-        charCount[c] = 0;
-      } else {
-        charCount[c] = std::min(charCount[c], it->second);
-      }
-    }
-  }
-  std::vector<char> result;
-  for (const auto &[c, count] : charCount) {
-    for (int i = 0; i < count; i++) {
-      result.push_back(c);
-    }
-  }
-  return result;
-}
-
 constexpr auto make_iotas(const std::unordered_map<char, size_t> &lmap) {
   std::vector<std::vector<size_t>> iotas;
   iotas.reserve(lmap.size());

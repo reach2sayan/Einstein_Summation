@@ -30,7 +30,7 @@ FetchContent_MakeAvailable(mdspan)
 find_package(Eigen3 REQUIRED)
 link_directories(${Eigen_INCLUDE_DIRS})
 
-add_executable(einsum main.cpp einsum.cpp)
+add_executable(einsum src/main.cpp src/einsum.cpp)
 
 target_include_directories(einsum PRIVATE
         ${mdspan_SOURCE_DIR}/include
