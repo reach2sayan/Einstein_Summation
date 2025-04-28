@@ -2,13 +2,13 @@
 #define HELPER_HPP
 
 #include <cassert>
+#include <functional>
+#include <map>
+#include <numeric>
 #include <ranges>
 #include <string_view>
 #include <tuple>
-#include <unordered_map>
 #include <vector>
-#include <numeric>
-#include <functional>
 
 constexpr std::pair<std::string_view, std::string_view>
 split_arrow(std::string_view str) {
@@ -39,11 +39,25 @@ constexpr auto split_comma(std::string_view str) {
 }
 
 constexpr auto make_label_axis_map(std::string_view str) {
-  std::vector<std::pair<char, size_t>> retmap;
+  std::map<char, size_t> retmap;
   for (auto [index, c] : std::ranges::enumerate_view(str)) {
-    retmap.emplace_back(c, index);
+    retmap.insert({c, index});
   }
   return retmap;
+}
+
+constexpr std::multimap<char, size_t>
+make_missing_axis(const std::vector<std::string_view> &inputs,
+                  std::string_view out_str) {
+  std::multimap<char, size_t> missing;
+  for (auto &&[index, input] : std::ranges::enumerate_view(inputs)) {
+    for (char c : input) {
+      if (out_str.find(c) == std::string_view::npos) {
+        missing.insert({c, index});
+      }
+    }
+  }
+  return missing;
 }
 
 std::vector<char> constexpr find_common_characters(
@@ -82,6 +96,19 @@ std::vector<char> constexpr find_common_characters(
   return result;
 }
 
+constexpr auto make_iotas(const std::unordered_map<char, size_t> &lmap) {
+  std::vector<std::vector<size_t>> iotas;
+  iotas.reserve(lmap.size());
+  for (auto &[key, index] : lmap) {
+    std::vector<size_t> tmp(index);
+    std::iota(std::begin(tmp), std::end(tmp), 0);
+    iotas.emplace_back(std::move(tmp));
+  }
+  return iotas;
+}
+
+#ifdef HIDE
+
 template <typename Tuple>
 void fill_label_to_dim_map(const std::vector<std::string_view> &labels,
                            const Tuple &inputs_tuple,
@@ -94,7 +121,7 @@ void fill_label_to_dim_map(const std::vector<std::string_view> &labels,
        std::string_view label = labels[Is];
        const auto &current_span = std::get<Is>(inputs_tuple);
        auto shp = current_span.extents();
-       assert(shp.size() == label.size());
+       // assert(shp.size() == label.size());
        for (auto &&[lchar, dim] : std::ranges::views::zip(label, shp)) {
          if (!label_to_dim.contains(lchar))
            label_to_dim[lchar] = dim;
@@ -106,17 +133,6 @@ void fill_label_to_dim_map(const std::vector<std::string_view> &labels,
   }(std::make_index_sequence<N>{});
 }
 
-constexpr auto make_iotas(const std::unordered_map<char, size_t> &lmap) {
-  std::vector<std::vector<size_t>> iotas;
-  iotas.reserve(lmap.size());
-  for (auto &[key, index] : lmap) {
-    std::vector<size_t> tmp(index);
-    std::iota(std::begin(tmp), std::end(tmp), 0);
-    iotas.emplace_back(std::move(tmp));
-  }
-  return iotas;
-}
-
 constexpr auto
 make_label_and_extents_map(const std::vector<std::string_view> &labels,
                            auto &&...inputs) {
@@ -126,8 +142,9 @@ make_label_and_extents_map(const std::vector<std::string_view> &labels,
   return label_to_dim;
 }
 
-void cartesian_product(const std::vector<std::vector<size_t>> &vectors,
-                       std::vector<std::vector<size_t>> &result) {
+constexpr void
+cartesian_product(const std::vector<std::vector<size_t>> &vectors,
+                  std::vector<std::vector<size_t>> &result) {
   if (vectors.empty())
     return;
 
@@ -149,3 +166,5 @@ void cartesian_product(const std::vector<std::vector<size_t>> &vectors,
 }
 
 #endif
+
+#endif // HELPER_HPP

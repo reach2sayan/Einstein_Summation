@@ -15,18 +15,25 @@ int main() {
 
   std::mdspan<int, std::extents<size_t,3,3>> mdA{A.data()};
   std::mdspan<int, std::extents<size_t,3,3>> mdB{B.data()};
+
+  std::vector A2{1, 1, 1, 2};
+  std::vector B2{0, 1, 2, 3};
+
+  std::mdspan<int, std::extents<size_t,2,2>> mdA2{A2.data()};
+  std::mdspan<int, std::extents<size_t,2,2>> mdB2{B2.data()};
+
+
+  //MatrixHolder holder2{mdA2, mdB2};
+  //Einsum einsum2("ij,jk->ki", mdA2, mdB2);
+  //EinsumLabels labels2("ij,jk->ki");
+
   MatrixHolder holder{mdA, mdB};
   EinsumLabels labels("bhwi,bhwj->bij");
+  int a = 0;
+  //Einsum einsum("bhwi,bhwj->bij", mdA, mdB);
+  //std::cout << einsum;
 
-  Einsum einsum("bhwi,bhwj->bij", mdA, mdB);
-  std::cout << einsum;
+  //auto prod = einsum.make_result_indices();
 
-  auto prod = einsum.make_result_indices();
-  for (auto &&p : prod) {
-    for (auto &&i : p) {
-      std::cout << i << " ";
-    }
-    std::cout << std::endl;
-  }
 
 }

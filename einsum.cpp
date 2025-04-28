@@ -7,8 +7,8 @@
 #include <numeric>
 
 constexpr size_t EinsumLabels::find_axis(char c) {
-  auto iter = std::ranges::find_if(label_axis_map,
+  auto iter = std::ranges::find_if(output_axis_map,
                                    [c](auto &p) { return p.first == c; });
-  if (iter != label_axis_map.end())
+  if (iter != output_axis_map.end())
     return iter->second;
 }

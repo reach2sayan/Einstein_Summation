@@ -16,14 +16,17 @@
 class EinsumLabels {
   std::string_view out_str;
   std::vector<std::string_view> inputs;
-  std::vector<std::pair<char, size_t>> label_axis_map;
+  std::map<char, size_t> output_axis_map;
+  std::multimap<char, size_t> missing_from_out;
   template <typename... Ts> friend class Einsum;
 
 public:
   constexpr EinsumLabels(std::string_view str)
       : out_str{split_arrow(str).second},
         inputs{split_comma(split_arrow(str).first)},
-        label_axis_map{make_label_axis_map(out_str)} {}
+        output_axis_map{make_label_axis_map(out_str)},
+        missing_from_out{make_missing_axis(inputs, out_str)}
+  {}
 
   constexpr size_t find_axis(char c);
 
@@ -34,7 +37,7 @@ public:
       out << "Input: " << input << "\n";
     }
     out << "Axis Map:\n";
-    for (auto [c, i] : labels.label_axis_map) {
+    for (auto [c, i] : labels.output_axis_map) {
       out << c << " -> " << i << "\n";
     }
     out << std::endl;
@@ -43,7 +46,7 @@ public:
 
   auto num_inputs() const { return inputs.size(); }
   std::string_view common_axis() const;
-  auto get_map() const { return label_axis_map; }
+  auto get_map() const { return output_axis_map; }
 
   auto make_result_indices();
 };
