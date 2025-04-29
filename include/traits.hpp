@@ -12,6 +12,8 @@ template <typename T, size_t... Dimensions> struct Matrix {
   constexpr static size_t rank = sizeof...(Dimensions);
   constexpr static std::array<size_t, sizeof...(Dimensions)> extents{
       Dimensions...};
+
+  using value_type = T;
   using seq = std::index_sequence<Dimensions...>;
 };
 
@@ -19,30 +21,33 @@ template <char... Cs> struct Labels {
   constexpr static std::array<char, sizeof...(Cs)> labels{Cs...};
 };
 
+template <size_t... Dims> struct Dimensions {
+  constexpr static std::array<size_t, sizeof...(Dims)> dims{Dims...};
+};
+
 template <size_t Dim, char Label> struct LabeledDimension {
   static constexpr size_t dim = Dim;
   static constexpr char label = Label;
 };
 
-template <typename T, typename... LabeledDimensions> struct LabeledExtents {
-  using value_type = T;
+template <typename... LabeledDimensions> struct LabeledExtents {
   using dims = std::tuple<LabeledDimensions...>;
 };
 
-template <typename T, typename Dims, typename Labels>
+template <typename Dims, typename Labels>
 struct MatrixLabelCombinator;
 
-template <typename T, size_t... Dims, char... Cs>
-struct MatrixLabelCombinator<T, std::index_sequence<Dims...>, Labels<Cs...>> {
+template <size_t... Dims, char... Cs>
+struct MatrixLabelCombinator<std::index_sequence<Dims...>, Labels<Cs...>> {
   static_assert(sizeof...(Dims) == sizeof...(Cs),
                 "Mismatch in dimensions and labels");
-  using type = LabeledExtents<T, LabeledDimension<Dims, Cs>...>;
+  using type = LabeledExtents<LabeledDimension<Dims, Cs>...>;
   using dims = std::tuple<LabeledDimension<Dims, Cs>...>;
 };
 
 template <typename T, typename TMatrix, typename TLabel>
 using matrix_with_labeled_dims_t =
-    MatrixLabelCombinator<int, typename TMatrix::seq, TLabel>::type;
+    MatrixLabelCombinator<typename TMatrix::seq, TLabel>::type;
 
 template <typename Tuple> struct map_of;
 template <typename Head, typename... Tail>

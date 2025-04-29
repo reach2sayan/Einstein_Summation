@@ -4,7 +4,20 @@
 #ifndef MATRIXHOLDER_HPP
 #define MATRIXHOLDER_HPP
 
-#include <tuple>
+
+#include "traits.hpp"
+
+template <template <typename T, size_t... DimensionsA> class MatrixA,
+          template <typename T, size_t... DimensionsB> class MatrixB,
+          template <char... CsA> class LabelsA,
+          template <char... CsB> class LabelsB
+>
+class MatrixHolder2 {
+
+};
+
+
+
 
 template <typename... Ts> class MatrixHolder {
   std::tuple<Ts...> matrices;
@@ -35,16 +48,16 @@ struct tuple_element<N, MatrixHolder<Ts...>> {
 
 template <std::size_t N, typename... Ts>
 constexpr decltype(auto) get(MatrixHolder<Ts...> &w) {
-  return std::get<N>(w.equations);
+  return std::get<N>(w.matrices);
 }
 template <std::size_t N, typename... Ts>
 constexpr decltype(auto) get(const MatrixHolder<Ts...> &w) {
-  return std::get<N>(w.equations);
+  return std::get<N>(w.matrices);
 }
 
 template <std::size_t N, typename... Ts>
 constexpr decltype(auto) get(MatrixHolder<Ts...> &&w) {
-  return std::get<N>(std::move(w.equations));
+  return std::get<N>(std::move(w.matrices));
 }
 
 
