@@ -12,8 +12,9 @@ template <typename... Ts> class MatrixHolder {
 public:
   MatrixHolder(Ts... matrices) : matrices{matrices...} {}
   constexpr size_t num_matrices() { return sizeof...(Ts); }
-  decltype(auto) operator[](size_t i) { return std::get<i>(matrices); }
 };
+
+// TODO : add get interface
 
 
 #endif //MATRIXHOLDER_HPP

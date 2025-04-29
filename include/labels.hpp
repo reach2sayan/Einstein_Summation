@@ -10,21 +10,21 @@
 #include <ostream>
 
 #ifndef HELPER_HPP
-#include "helper.hpp"
+#include "helpers.hpp"
 #endif
 
-class EinsumLabels {
-  std::string_view out_str;
-  std::vector<std::string_view> inputs;
-  std::map<char, size_t> output_axis_map;
-  std::multimap<char, size_t> missing_from_out;
+struct EinsumLabels {
+  const std::string_view out_str;
+  const std::vector<std::string_view> inputs;
+  const std::map<char, size_t> output_axis_map;
+  const std::multimap<char, std::pair<size_t,size_t>> missing_from_out;
   template <typename... Ts> friend class Einsum;
 
 public:
   constexpr EinsumLabels(std::string_view str)
       : out_str{split_arrow(str).second},
         inputs{split_comma(split_arrow(str).first)},
-        output_axis_map{make_label_axis_map(out_str)},
+        output_axis_map{make_output_label_axis_map(out_str)},
         missing_from_out{make_missing_axis(inputs, out_str)}
   {}
 

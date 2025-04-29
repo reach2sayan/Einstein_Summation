@@ -6,7 +6,7 @@
 #define EINSUM_HPP
 
 #ifndef HELPER_HPP
-#include "../src/labels.cpp"
+#include "helpers.hpp"
 #endif
 
 #ifndef MATRIXHOLDER_HPP

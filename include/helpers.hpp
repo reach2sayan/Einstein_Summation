@@ -38,7 +38,7 @@ constexpr auto split_comma(std::string_view str) {
   return input;
 }
 
-constexpr auto make_label_axis_map(std::string_view str) {
+constexpr auto make_output_label_axis_map(std::string_view str) {
   std::map<char, size_t> retmap;
   for (auto [index, c] : std::ranges::enumerate_view(str)) {
     retmap.insert({c, index});
@@ -46,14 +46,15 @@ constexpr auto make_label_axis_map(std::string_view str) {
   return retmap;
 }
 
-constexpr std::multimap<char, size_t>
+constexpr std::multimap<char, std::pair<size_t,size_t>>
 make_missing_axis(const std::vector<std::string_view> &inputs,
                   std::string_view out_str) {
-  std::multimap<char, size_t> missing;
+  std::multimap<char, std::pair<size_t,size_t>> missing;
   for (auto &&[index, input] : std::ranges::enumerate_view(inputs)) {
     for (char c : input) {
-      if (out_str.find(c) == std::string_view::npos) {
-        missing.insert({c, index});
+      auto pos = out_str.find(c);
+      if (pos == std::string_view::npos) {
+        missing.insert({c, std::make_pair(index, pos)});
       }
     }
   }

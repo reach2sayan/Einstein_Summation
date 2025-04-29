@@ -2,6 +2,7 @@
 // Created by sayan on 4/25/25.
 //
 #include "../include/einsum.hpp"
+#include "traits.hpp"
 #include <algorithm>
 #include <ranges>
 #include <string_view>
@@ -30,6 +31,7 @@ int main() {
   MatrixHolder holder{mdA, mdB};
   EinsumLabels labels("bhwi,bhwj->bij");
   int a = 0;
+
   //Einsum einsum("bhwi,bhwj->bij", mdA, mdB);
   //std::cout << einsum;
 
