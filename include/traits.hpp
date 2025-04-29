@@ -48,17 +48,40 @@ template <typename TMatrix, typename TLabel>
 using matrix_with_labeled_dims_t =
     MatrixLabelCombinator<typename TMatrix::seq, TLabel>::type;
 
-template <typename Tuple> struct map_of;
+template <typename Tuple> struct array_of;
 template <typename Head, typename... Tail>
-struct map_of<std::tuple<Head, Tail...>> {
+struct array_of<std::tuple<Head, Tail...>> {
   constexpr static std::array<std::pair<char, size_t>, sizeof...(Tail) + 1>
       value = {std::make_pair(Head::label, Head::dim),
                std::make_pair(Tail::label, Tail::dim)...};
 };
 
+template <size_t N> struct fixed_string {
+  char data[N];
+  constexpr fixed_string(const char (&str)[N]) {
+    for (size_t i = 0; i < N; ++i)
+      data[i] = str[i];
+  }
+  constexpr char operator[](size_t i) const { return data[i]; }
+  constexpr size_t size() const { return N; }
+};
+
+template <fixed_string fs, template <char...> class LabelT, size_t... Is>
+constexpr auto make_labels_impl(std::index_sequence<Is...>) {
+  return LabelT<fs[Is]...>{};
+}
+
+template <fixed_string fs, template <char...> class LabelT>
+constexpr auto make_labels() {
+  return make_labels_impl<fs, LabelT>(
+      std::make_index_sequence<fs.size() - 1>{});
+}
+
+using MyLabels = decltype(make_labels<"ij", Labels>());
+
 template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
-  for (auto &&lmap : map_of<TupleA>::value) {
-    for (auto &&rmap : map_of<TupleB>::value) {
+  for (auto &&lmap : array_of<TupleA>::value) {
+    for (auto &&rmap : array_of<TupleB>::value) {
       if (lmap.first == rmap.first && lmap.second != rmap.second)
         return false;
     }

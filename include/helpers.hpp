@@ -10,6 +10,9 @@
 #include <tuple>
 #include <vector>
 
+template<typename... Ts>
+struct TD;
+
 constexpr std::pair<std::string_view, std::string_view>
 split_arrow(std::string_view str) {
   auto dash_pos = str.find('-');

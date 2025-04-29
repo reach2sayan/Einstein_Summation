@@ -27,8 +27,8 @@ int main() {
   //MatrixHolder holder2{mdA2, mdB2};
   //Einsum einsum2("ij,jk->ki", mdA2, mdB2);
   //EinsumLabels labels2("ij,jk->ki");
-
   EinsumLabels labels("bhwi,bhwj->bij");
+  //MatrixHolder m{mdB2, mdA2, "ij", "kj"};
   int a = 0;
 
   //Einsum einsum("bhwi,bhwj->bij", mdA, mdB);

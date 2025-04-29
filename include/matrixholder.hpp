@@ -8,6 +8,8 @@
 #include "traits.hpp"
 #endif
 
+#include <experimental/mdspan>
+
 template <typename T, typename A, typename MatB, typename LabA, typename LabB>
 class MatrixHolder;
 
@@ -17,17 +19,23 @@ class MatrixHolder<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
                    Labels<CsB...>> {
 private:
   using left_labels =
-  matrix_with_labeled_dims_t<Matrix<T, DimsA...>, Labels<CsA...>>::dims;
+      matrix_with_labeled_dims_t<Matrix<T, DimsA...>, Labels<CsA...>>::dims;
   using right_labels =
       matrix_with_labeled_dims_t<Matrix<T, DimsB...>, Labels<CsB...>>::dims;
-  static_assert(validity_checker<left_labels,right_labels>());
+  static_assert(validity_checker<left_labels, right_labels>());
 
 public:
-  constexpr static auto left_label_dim_map = map_of<left_labels>::value;
-  constexpr static auto right_label_dim_map = map_of<right_labels>::value;
+  constexpr static auto left_label_dim_map = array_of<left_labels>::value;
+  constexpr static auto right_label_dim_map = array_of<right_labels>::value;
+  MatrixHolder(std::mdspan<T, std::extents<size_t, DimsA...>> A,
+               std::mdspan<T, std::extents<size_t, DimsB...>> B,
+               std::string_view la, std::string_view lb)
+      : matrices{A, B} {}
 
 private:
-  std::pair<T *, T *> matrices = {nullptr, nullptr};
+  std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
+            std::mdspan<T, std::extents<size_t, DimsA...>>>
+      matrices;
 
   template <std::size_t N, typename... Us>
   friend constexpr decltype(auto) get(MatrixHolder<Us...> &);
@@ -40,7 +48,7 @@ private:
 namespace std {
 template <typename... Ts>
 struct tuple_size<MatrixHolder<Ts...>>
-    : std::integral_constant<std::size_t, sizeof...(Ts)> {};
+    : std::integral_constant<std::size_t, 2> {};
 
 template <std::size_t N, typename... Ts>
 struct tuple_element<N, MatrixHolder<Ts...>> {
@@ -62,13 +70,20 @@ constexpr decltype(auto) get(MatrixHolder<Ts...> &&w) {
   return std::get<N>(std::move(w.matrices));
 }
 
+template <typename T, size_t... DimsA, size_t... DimsB, char... CsA, char... CsB>
+MatrixHolder(std::mdspan<T, std::extents<size_t, DimsA...>> A,
+             std::mdspan<T, std::extents<size_t, DimsB...>> B,
+             std::string_view la, std::string_view lb
+             )
+    -> MatrixHolder<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
+                    Labels<CsB...>>;
+
 using MatA = Matrix<int, 2, 2>;
 using MatB = Matrix<int, 2, 2>;
 using LabelsA = Labels<'i', 'j'>;
 using LabelsB = Labels<'j', 'k'>;
 
-using holder = MatrixHolder<int, MatA,MatB,LabelsA,LabelsB>;
+using holder = MatrixHolder<int, MatA, MatB, LabelsA, LabelsB>;
 
 constexpr auto m1 = holder::left_label_dim_map;
-
 #endif // MATRIXHOLDER_HPP
