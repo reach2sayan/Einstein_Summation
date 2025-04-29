@@ -34,8 +34,7 @@ template <typename... LabeledDimensions> struct LabeledExtents {
   using dims = std::tuple<LabeledDimensions...>;
 };
 
-template <typename Dims, typename Labels>
-struct MatrixLabelCombinator;
+template <typename Dims, typename Labels> struct MatrixLabelCombinator;
 
 template <size_t... Dims, char... Cs>
 struct MatrixLabelCombinator<std::index_sequence<Dims...>, Labels<Cs...>> {
@@ -45,7 +44,7 @@ struct MatrixLabelCombinator<std::index_sequence<Dims...>, Labels<Cs...>> {
   using dims = std::tuple<LabeledDimension<Dims, Cs>...>;
 };
 
-template <typename T, typename TMatrix, typename TLabel>
+template <typename TMatrix, typename TLabel>
 using matrix_with_labeled_dims_t =
     MatrixLabelCombinator<typename TMatrix::seq, TLabel>::type;
 
@@ -53,39 +52,21 @@ template <typename Tuple> struct map_of;
 template <typename Head, typename... Tail>
 struct map_of<std::tuple<Head, Tail...>> {
   constexpr static std::array<std::pair<char, size_t>, sizeof...(Tail) + 1>
-      value = {
-          std::make_pair(Head::label, Head::dim),
-          std::make_pair(Tail::label, Tail::dim)...};
+      value = {std::make_pair(Head::label, Head::dim),
+               std::make_pair(Tail::label, Tail::dim)...};
 };
 
-template <typename TupleA, typename TupleB>
-constexpr bool valid() {
-  for (auto&& lmap : map_of<TupleA>::value) {
-    for (auto&& rmap : map_of<TupleB>::value) {
+template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
+  for (auto &&lmap : map_of<TupleA>::value) {
+    for (auto &&rmap : map_of<TupleB>::value) {
       if (lmap.first == rmap.first && lmap.second != rmap.second)
         return false;
     }
   }
   return true;
 }
-using MatA = Matrix<int, 2, 2>;
-using resA = matrix_with_labeled_dims_t<int, MatA, Labels<'i', 'j'>>;
-using lsA = resA::dims;
-using MatB = Matrix<int, 2, 2>;
-using resB = matrix_with_labeled_dims_t<int, MatB, Labels<'j', 'k'>>;
-using lsB = resB::dims;
-
-constexpr auto maps1 = map_of<lsA>::value;
-constexpr auto map2 = map_of<lsB>::value;
-
-
-constexpr bool val = valid<lsA, lsB>();
-static_assert(val);
-using MatC = Matrix<int, 2, 2>;
-using resC = matrix_with_labeled_dims_t<int, MatC, Labels<'j', 'k'>>;
 
 #endif // TRAITS_HPP
-
 
 #ifdef HIDE
 template <typename Tuple> struct labels_of;

@@ -28,8 +28,6 @@ int main() {
   //Einsum einsum2("ij,jk->ki", mdA2, mdB2);
   //EinsumLabels labels2("ij,jk->ki");
 
-  MatrixHolder holder{mdA, mdB};
-  auto [mdAA, mdBB] = holder;
   EinsumLabels labels("bhwi,bhwj->bij");
   int a = 0;
 
