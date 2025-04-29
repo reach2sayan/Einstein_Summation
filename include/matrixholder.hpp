@@ -4,7 +4,9 @@
 #ifndef MATRIXHOLDER_HPP
 #define MATRIXHOLDER_HPP
 
+#ifndef TRAITS_HPP
 #include "traits.hpp"
+#endif
 
 template <typename T, typename A, typename MatB, typename LabA, typename LabB>
 class MatrixHolder;
