@@ -58,7 +58,7 @@ struct array_of<std::tuple<Head, Tail...>> {
 
 template <std::size_t N> struct fixed_string {
   char data[N];
-  constexpr fixed_string(const char (&str)[N]) {
+  constexpr fixed_string(const char (&str)[N+1]) {
     for (std::size_t i = 0; i < N; ++i)
       data[i] = str[i];
   }
@@ -73,7 +73,7 @@ template <fixed_string fs> constexpr auto make_labels() {
   return helper(std::make_index_sequence<fs.size() - 1>{});
 }
 
-using MyLabels = decltype(make_labels<"ij">());
+//using MyLabels = decltype(make_labels<"ij">());
 
 template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
   for (auto &&lmap : array_of<TupleA>::value) {

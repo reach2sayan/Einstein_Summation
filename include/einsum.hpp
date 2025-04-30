@@ -9,13 +9,13 @@
 #endif
 
 #include <experimental/mdspan>
-template <typename T, typename MatrixA, typename MatrixB, typename LabelA, typename LabelB>
+template <typename T, typename MatrixA, typename MatrixB, typename LabelA, typename LabelB, typename LabelR>
 class Einsum;
 
 template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
-          char... CsB>
+          char... CsB, char... CsRes>
 class Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
-                   Labels<CsB...>> {
+                   Labels<CsB...>, Labels<CsRes...>> {
 private:
   using left_labels =
       matrix_with_labeled_dims_t<Matrix<T, DimsA...>, Labels<CsA...>>::dims;
@@ -28,14 +28,17 @@ public:
   constexpr static auto right_label_dim_map = array_of<right_labels>::value;
   Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
                std::mdspan<T, std::extents<size_t, DimsB...>> B,
-               fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsA)> lb)
-      : matrices{A, B} {}
+               fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsA)> lb,
+               fixed_string<sizeof...(CsRes)> lres)
+      : matrices{A, B}, lstr{la}, rstr{lb}, resstr{lres} {}
 
 private:
   std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
             std::mdspan<T, std::extents<size_t, DimsA...>>>
       matrices;
-
+  fixed_string<sizeof...(CsA)> lstr;
+  fixed_string<sizeof...(CsA)> rstr;
+  fixed_string<sizeof...(CsA)> resstr;
   template <std::size_t N, typename... Us>
   friend constexpr decltype(auto) get(Einsum<Us...> &);
   template <std::size_t N, typename... Us>
@@ -69,24 +72,14 @@ constexpr decltype(auto) get(Einsum<Ts...> &&w) {
   return std::get<N>(std::move(w.matrices));
 }
 
-template <typename T, size_t... DimsA, size_t... DimsB, char... CsA, char... CsB,
-fixed_string LA, fixed_string LB>
+template <typename T, size_t... DimsA, size_t... DimsB, char... CsA, char... CsB, char... CsRes,
+fixed_string LA, fixed_string LB, fixed_string LRES>
 Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
              std::mdspan<T, std::extents<size_t, DimsB...>> B,
-             fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb
+             fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb,
+             fixed_string<sizeof...(CsRes)> lres
              )
     -> Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>,
-                    decltype(make_labels<LA>()), decltype(make_labels<LB>())>;
+                    decltype(make_labels<LA>()), decltype(make_labels<LB>()), decltype(make_labels<LRES>())>;
 
-using MatA = Matrix<int, 2, 2>;
-using MatB = Matrix<int, 2, 2>;
-using LabelsA = Labels<'i', 'j'>;
-using LabelsB = Labels<'j', 'k'>;
-const char strp[4] = "ijk";
-std::string_view str(strp);
-constexpr fixed_string<4> fs = "ijk";
-using lab = decltype(make_labels<fs>());
-using holder = Einsum<int, MatA, MatB, LabelsA, LabelsB>;
-
-constexpr auto m1 = holder::left_label_dim_map;
 #endif // MATRIXHOLDER_HPP
