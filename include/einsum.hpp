@@ -33,12 +33,12 @@ private:
 
     auto printer = [&]<typename TupleLike>(TupleLike tpl) {
       std::apply(
-        [&](auto &&...args) {
-          ((out << std::decay_t<decltype(args)>::label << " "
-                << std::decay_t<decltype(args)>::dim << "\n"),
-           ...);
-        },
-        tpl);
+          [&](auto &&...args) {
+            ((out << std::decay_t<decltype(args)>::label << " "
+                  << std::decay_t<decltype(args)>::dim << "\n"),
+             ...);
+          },
+          tpl);
     };
     out << "Left Matrix Labels (with dimensions):\n";
     printer(left_labels{});
@@ -58,7 +58,7 @@ public:
          fixed_string<sizeof...(CsRes)> lres)
       : matrices{A, B}, lstr{la}, rstr{lb}, resstr{lres} {}
 
-  constexpr auto eval() {}
+  constexpr auto eval();
 
 private:
   std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
@@ -77,6 +77,21 @@ private: // std::get interface
   template <std::size_t N, typename... Us>
   friend constexpr decltype(auto) get(Einsum<Us...> &&);
 };
+
+
+template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
+          char... CsB, char... CsRes>
+constexpr auto
+Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
+       Labels<CsB...>, Labels<CsRes...>>::eval() {
+
+  auto tuple_to_array = []<typename TupleT, size_t... Is>(TupleT tuple, std::index_sequence<Is...>) {
+    return std::array{ decltype(std::get<Is>(tuple))::dim...};
+  };
+
+  auto left_dims = tuple_to_array(left_labels{}, std::make_index_sequence<sizeof...(DimsA)>());
+
+}
 
 namespace std {
 template <typename... Ts>

@@ -2,13 +2,15 @@
 // Created by sayan on 4/25/25.
 //
 #include "../include/einsum.hpp"
+#include "helpers.hpp"
 #include "traits.hpp"
 #include <algorithm>
+#include <iostream>
 #include <ranges>
 #include <string_view>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
-#include <iostream>
 
 using MatA = Matrix<int, 2, 2>;
 using MatB = Matrix<int, 2, 2>;
@@ -21,21 +23,22 @@ constexpr fixed_string<2> fs("ij");
 using lab = decltype(make_labels<fs>());
 using holder = Einsum<int, MatA, MatB, LabelsA, LabelsB, LabelsR>;
 
-constexpr auto m1 = holder::left_label_dim_map;
-constexpr auto m2 = holder::right_label_dim_map;
-
 
 int main() {
 
-  std::vector A{1, 1, 1,2};
+  std::vector A{1, 1, 1, 2};
   std::vector B{0, 1, 2, 3};
 
-  std::mdspan<int, std::extents<size_t,2,2>> mdA{A.data()};
-  std::mdspan<int, std::extents<size_t,2,2>> mdB{B.data()};
+  std::mdspan<int, std::extents<size_t, 2, 2>> mdA{A.data()};
+  std::mdspan<int, std::extents<size_t, 2, 2>> mdB{B.data()};
 
-  holder a{mdA, mdB,"ij","jk","ik"};
+  holder a{mdA, mdB, "ij", "jk", "ik"};
   constexpr auto lmap = holder::left_label_dim_map;
   constexpr auto rmap = holder::right_label_dim_map;
-
+  constexpr auto mm = merge_and_check_conflicts(lmap, rmap);
+  auto l = split_comma("a,b");
+  for (auto &&[key, val] : mm) {
+    std::cout << key << " " << val << "\n";
+  }
   std::cout << a;
 }

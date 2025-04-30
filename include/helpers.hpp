@@ -13,13 +13,45 @@
 template<typename... Ts>
 struct TD;
 
-constexpr std::pair<std::string_view, std::string_view>
+consteval std::pair<std::string_view, std::string_view>
 split_arrow(std::string_view str) {
   auto dash_pos = str.find('-');
   auto arrow_pos = str.find('>');
   auto lview = str.substr(0, dash_pos);
   auto rview = str.substr(arrow_pos + 1);
   return {lview, rview};
+}
+
+template <typename K, typename V, std::size_t N1, std::size_t N2>
+consteval auto
+merge_and_check_conflicts(const std::array<std::pair<K, V>, N1> &a1,
+                           const std::array<std::pair<K, V>, N2> &a2) {
+  std::array<std::pair<K, V>, N1 + N2> result{};
+  std::size_t result_size = 0;
+  for (std::size_t i = 0; i < N1; ++i) {
+    result[result_size++] = a1[i];
+  }
+  for (std::size_t i = 0; i < N2; ++i) {
+    const auto &[key, val] = a2[i];
+    bool found = false;
+
+    for (std::size_t j = 0; j < result_size; ++j) {
+      if (result[j].first == key) {
+        found = true;
+        assert(result[j].second == val);
+        break;
+      }
+    }
+    if (!found) {
+      result[result_size++] = a2[i];
+    }
+  }
+
+  std::array<std::pair<K, V>, N1 + N2> final_result{};
+  for (std::size_t i = 0; i < result_size; ++i) {
+    final_result[i] = result[i];
+  }
+  return final_result;
 }
 
 constexpr auto split_comma(std::string_view str) {
