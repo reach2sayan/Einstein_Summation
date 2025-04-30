@@ -23,14 +23,6 @@ int main() {
   std::mdspan<int, std::extents<size_t,2,2>> mdA2{A2.data()};
   std::mdspan<int, std::extents<size_t,2,2>> mdB2{B2.data()};
 
-
-  //MatrixHolder holder2{mdA2, mdB2};
-  //Einsum einsum2("ij,jk->ki", mdA2, mdB2);
-  //EinsumLabels labels2("ij,jk->ki");
-  EinsumLabels labels("bhwi,bhwj->bij");
-  //MatrixHolder m{mdB2, mdA2, "ij", "kj"};
-  int a = 0;
-
   //Einsum einsum("bhwi,bhwj->bij", mdA, mdB);
   //std::cout << einsum;
 

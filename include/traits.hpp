@@ -7,10 +7,10 @@
 #include <array>
 #include <tuple>
 
-template <typename T, size_t... Dimensions> struct Matrix {
+template <typename T, std::size_t... Dimensions> struct Matrix {
   T *data = nullptr;
-  constexpr static size_t rank = sizeof...(Dimensions);
-  constexpr static std::array<size_t, sizeof...(Dimensions)> extents{
+  constexpr static std::size_t rank = sizeof...(Dimensions);
+  constexpr static std::array<std::size_t, sizeof...(Dimensions)> extents{
       Dimensions...};
 
   using value_type = T;
@@ -21,12 +21,12 @@ template <char... Cs> struct Labels {
   constexpr static std::array<char, sizeof...(Cs)> labels{Cs...};
 };
 
-template <size_t... Dims> struct Dimensions {
-  constexpr static std::array<size_t, sizeof...(Dims)> dims{Dims...};
+template <std::size_t... Dims> struct Dimensions {
+  constexpr static std::array<std::size_t, sizeof...(Dims)> dims{Dims...};
 };
 
-template <size_t Dim, char Label> struct LabeledDimension {
-  static constexpr size_t dim = Dim;
+template <std::size_t Dim, char Label> struct LabeledDimension {
+  static constexpr std::size_t dim = Dim;
   static constexpr char label = Label;
 };
 
@@ -36,7 +36,7 @@ template <typename... LabeledDimensions> struct LabeledExtents {
 
 template <typename Dims, typename Labels> struct MatrixLabelCombinator;
 
-template <size_t... Dims, char... Cs>
+template <std::size_t... Dims, char... Cs>
 struct MatrixLabelCombinator<std::index_sequence<Dims...>, Labels<Cs...>> {
   static_assert(sizeof...(Dims) == sizeof...(Cs),
                 "Mismatch in dimensions and labels");
@@ -51,23 +51,23 @@ using matrix_with_labeled_dims_t =
 template <typename Tuple> struct array_of;
 template <typename Head, typename... Tail>
 struct array_of<std::tuple<Head, Tail...>> {
-  constexpr static std::array<std::pair<char, size_t>, sizeof...(Tail) + 1>
+  constexpr static std::array<std::pair<char, std::size_t>, sizeof...(Tail) + 1>
       value = {std::make_pair(Head::label, Head::dim),
                std::make_pair(Tail::label, Tail::dim)...};
 };
 
-template <size_t N> struct fixed_string {
+template <std::size_t N> struct fixed_string {
   char data[N];
   constexpr fixed_string(const char (&str)[N]) {
-    for (size_t i = 0; i < N; ++i)
+    for (std::size_t i = 0; i < N; ++i)
       data[i] = str[i];
   }
-  constexpr char operator[](size_t i) const { return data[i]; }
-  constexpr size_t size() const { return N; }
+  constexpr char operator[](std::size_t i) const { return data[i]; }
+  constexpr std::size_t size() const { return N; }
 };
 
 template <fixed_string fs> constexpr auto make_labels() {
-  auto helper = []<size_t... Is>(std::index_sequence<Is...>) {
+  auto helper = []<std::size_t... Is>(std::index_sequence<Is...>) {
     return Labels<fs[Is]...>{};
   };
   return helper(std::make_index_sequence<fs.size() - 1>{});
