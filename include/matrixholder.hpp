@@ -29,7 +29,7 @@ public:
   constexpr static auto right_label_dim_map = array_of<right_labels>::value;
   MatrixHolder(std::mdspan<T, std::extents<size_t, DimsA...>> A,
                std::mdspan<T, std::extents<size_t, DimsB...>> B,
-               std::string_view la, std::string_view lb)
+               fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsA)> lb)
       : matrices{A, B} {}
 
 private:
@@ -70,19 +70,23 @@ constexpr decltype(auto) get(MatrixHolder<Ts...> &&w) {
   return std::get<N>(std::move(w.matrices));
 }
 
-template <typename T, size_t... DimsA, size_t... DimsB, char... CsA, char... CsB>
+template <typename T, size_t... DimsA, size_t... DimsB, char... CsA, char... CsB,
+fixed_string LA, fixed_string LB>
 MatrixHolder(std::mdspan<T, std::extents<size_t, DimsA...>> A,
              std::mdspan<T, std::extents<size_t, DimsB...>> B,
-             std::string_view la, std::string_view lb
+             fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb
              )
-    -> MatrixHolder<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
-                    Labels<CsB...>>;
+    -> MatrixHolder<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>,
+                    decltype(make_labels<LA>()), decltype(make_labels<LB>())>;
 
 using MatA = Matrix<int, 2, 2>;
 using MatB = Matrix<int, 2, 2>;
 using LabelsA = Labels<'i', 'j'>;
 using LabelsB = Labels<'j', 'k'>;
-
+const char strp[4] = "ijk";
+std::string_view str(strp);
+constexpr fixed_string<4> fs = "ijk";
+using lab = decltype(make_labels<fs>());
 using holder = MatrixHolder<int, MatA, MatB, LabelsA, LabelsB>;
 
 constexpr auto m1 = holder::left_label_dim_map;

@@ -66,18 +66,14 @@ template <size_t N> struct fixed_string {
   constexpr size_t size() const { return N; }
 };
 
-template <fixed_string fs, template <char...> class LabelT, size_t... Is>
-constexpr auto make_labels_impl(std::index_sequence<Is...>) {
-  return LabelT<fs[Is]...>{};
+template <fixed_string fs> constexpr auto make_labels() {
+  auto helper = []<size_t... Is>(std::index_sequence<Is...>) {
+    return Labels<fs[Is]...>{};
+  };
+  return helper(std::make_index_sequence<fs.size() - 1>{});
 }
 
-template <fixed_string fs, template <char...> class LabelT>
-constexpr auto make_labels() {
-  return make_labels_impl<fs, LabelT>(
-      std::make_index_sequence<fs.size() - 1>{});
-}
-
-using MyLabels = decltype(make_labels<"ij", Labels>());
+using MyLabels = decltype(make_labels<"ij">());
 
 template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
   for (auto &&lmap : array_of<TupleA>::value) {
