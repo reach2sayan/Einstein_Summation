@@ -21,6 +21,7 @@ using lab = decltype(make_labels<fs>());
 using holder = Einsum<int, MatA, MatB, LabelsA, LabelsB, LabelsR>;
 
 constexpr auto m1 = holder::left_label_dim_map;
+constexpr auto m2 = holder::right_label_dim_map;
 
 
 int main() {

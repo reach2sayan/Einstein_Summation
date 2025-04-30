@@ -4,6 +4,11 @@
 
 #ifndef TRAITS_HPP
 #define TRAITS_HPP
+
+#ifndef FIXED_STRING_HPP
+#include "fixed_string.hpp"
+#endif
+
 #include <array>
 #include <tuple>
 
@@ -55,35 +60,6 @@ struct array_of<std::tuple<Head, Tail...>> {
       value = {std::make_pair(Head::label, Head::dim),
                std::make_pair(Tail::label, Tail::dim)...};
 };
-
-template <std::size_t N> struct fixed_string {
-  char data[N];
-  constexpr fixed_string(const char (&str)[N+1]) {
-    for (std::size_t i = 0; i < N; ++i)
-      data[i] = str[i];
-  }
-  constexpr char operator[](std::size_t i) const { return data[i]; }
-  constexpr std::size_t size() const { return N; }
-};
-
-template <fixed_string fs> constexpr auto make_labels() {
-  auto helper = []<std::size_t... Is>(std::index_sequence<Is...>) {
-    return Labels<fs[Is]...>{};
-  };
-  return helper(std::make_index_sequence<fs.size() - 1>{});
-}
-
-//using MyLabels = decltype(make_labels<"ij">());
-
-template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
-  for (auto &&lmap : array_of<TupleA>::value) {
-    for (auto &&rmap : array_of<TupleB>::value) {
-      if (lmap.first == rmap.first && lmap.second != rmap.second)
-        return false;
-    }
-  }
-  return true;
-}
 
 #endif // TRAITS_HPP
 
