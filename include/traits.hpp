@@ -61,96 +61,80 @@ struct array_of<std::tuple<Head, Tail...>> {
                std::make_pair(Tail::label, Tail::dim)...};
 };
 
-// Check if a char is in a parameter pack
 template <char C, char... Cs>
 struct contains : std::bool_constant<((C == Cs) || ...)> {};
 
-// Concatenate two Labels
-template <typename A, typename B>
-struct concat;
-
-template <char... As, char... Bs>
-struct concat<Labels<As...>, Labels<Bs...>> {
-    using type = Labels<As..., Bs...>;
+template <typename A, typename B> struct concat;
+template <char... As, char... Bs> struct concat<Labels<As...>, Labels<Bs...>> {
+  using type = Labels<As..., Bs...>;
 };
 
-// Filter: keep only elements satisfying predicate Pred<C>
-template <template <char> class Pred, typename Pack>
-struct filter;
-
+template <template <char> class Pred, typename Pack> struct filter;
 template <template <char> class Pred, char... Cs>
 struct filter<Pred, Labels<Cs...>> {
-    template <char C>
-    using maybe_label = std::conditional_t<Pred<C>::value, Labels<C>, Labels<>>;
+  template <char C>
+  using maybe_label = std::conditional_t<Pred<C>::value, Labels<C>, Labels<>>;
 
-    // Expand: concat<maybe_label<C1>, maybe_label<C2>, ...>
-    template <typename... Ls>
-    struct concat_all;
+  template <typename... Ls> struct concat_all;
+  template <typename First, typename... Rest>
+  struct concat_all<First, Rest...> {
+    using type =
+        typename concat<First, typename concat_all<Rest...>::type>::type;
+  };
 
-    template <typename First, typename... Rest>
-    struct concat_all<First, Rest...> {
-        using type = typename concat<First, typename concat_all<Rest...>::type>::type;
-    };
+  template <typename Last> struct concat_all<Last> {
+    using type = Last;
+  };
 
-    template <typename Last>
-    struct concat_all<Last> {
-        using type = Last;
-    };
-
-    using type = typename concat_all<maybe_label<Cs>...>::type;
+  using type = typename concat_all<maybe_label<Cs>...>::type;
 };
 
 // Union of two label packs (allows duplicates)
-template <typename A, typename B>
-struct union_of;
-
+template <typename A, typename B> struct union_of;
 template <char... As, char... Bs>
 struct union_of<Labels<As...>, Labels<Bs...>> {
-    using type = Labels<As..., Bs...>;
+  using type = Labels<As..., Bs...>;
 };
 
 // Difference: A - B (remove from A any element in B)
-template <typename A, typename B>
-struct difference;
-
+template <typename A, typename B> struct difference;
 template <char... As, char... Bs>
 struct difference<Labels<As...>, Labels<Bs...>> {
-    template <char C>
-    struct not_in_B : std::bool_constant<!contains<C, Bs...>::value> {};
+  template <char C>
+  struct not_in_B : std::bool_constant<!contains<C, Bs...>::value> {};
 
-    using type = typename filter<not_in_B, Labels<As...>>::type;
+  using type = typename filter<not_in_B, Labels<As...>>::type;
 };
 
-// Unique: remove duplicates from a Labels<...>, preserving order
 template <typename In, typename Seen = Labels<>, typename Out = Labels<>>
 struct unique_impl;
 
 template <char Head, char... Tail, char... SeenChars, char... OutChars>
-struct unique_impl<Labels<Head, Tail...>, Labels<SeenChars...>, Labels<OutChars...>> {
-    static constexpr bool already_seen = contains<Head, SeenChars...>::value;
+struct unique_impl<Labels<Head, Tail...>, Labels<SeenChars...>,
+                   Labels<OutChars...>> {
+  static constexpr bool already_seen = contains<Head, SeenChars...>::value;
 
-    using next_seen = std::conditional_t<already_seen, Labels<SeenChars...>, Labels<SeenChars..., Head>>;
-    using next_out  = std::conditional_t<already_seen, Labels<OutChars...>, Labels<OutChars..., Head>>;
+  using next_seen = std::conditional_t<already_seen, Labels<SeenChars...>,
+                                       Labels<SeenChars..., Head>>;
+  using next_out = std::conditional_t<already_seen, Labels<OutChars...>,
+                                      Labels<OutChars..., Head>>;
 
-    using type = typename unique_impl<Labels<Tail...>, next_seen, next_out>::type;
+  using type = typename unique_impl<Labels<Tail...>, next_seen, next_out>::type;
 };
 
 template <char... SeenChars, char... OutChars>
 struct unique_impl<Labels<>, Labels<SeenChars...>, Labels<OutChars...>> {
-    using type = Labels<OutChars...>;
+  using type = Labels<OutChars...>;
 };
 
-template <typename L>
-struct unique {
-    using type = typename unique_impl<L>::type;
+template <typename L> struct unique {
+  using type = typename unique_impl<L>::type;
 };
 
-// Final metafunction: unique((A ∪ B) \ Res)
-template <typename A, typename B, typename Res>
-struct collapsed_dimensions {
-    using unionAB = typename union_of<A, B>::type;
-    using diff    = typename difference<unionAB, Res>::type;
-    using type    = typename unique<diff>::type;
+template <typename A, typename B, typename Res> struct collapsed_dimensions {
+  using unionAB = typename union_of<A, B>::type;
+  using diff = typename difference<unionAB, Res>::type;
+  using type = typename unique<diff>::type;
 };
 
 using A = Labels<'a', 'b'>;

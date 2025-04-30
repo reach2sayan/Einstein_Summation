@@ -9,6 +9,8 @@
 #endif
 
 #include <experimental/mdspan>
+#include <ostream>
+
 template <typename T, typename MatrixA, typename MatrixB, typename LabelA,
           typename LabelB, typename LabelR>
 class Einsum;
@@ -27,6 +29,26 @@ private:
   using collapsed_labels = collapsed_dimensions<Labels<CsA...>, Labels<CsB...>,
                                                 Labels<CsRes...>>::type;
 
+  friend std::ostream &operator<<(std::ostream &out, const Einsum &w) {
+
+    auto printer = [&]<typename TupleLike>(TupleLike tpl) {
+      std::apply(
+        [&](auto &&...args) {
+          ((out << std::decay_t<decltype(args)>::label << " "
+                << std::decay_t<decltype(args)>::dim << "\n"),
+           ...);
+        },
+        tpl);
+    };
+    out << "Left Matrix Labels (with dimensions):\n";
+    printer(left_labels{});
+
+    out << "Right Matrix Labels (with dimensions):\n";
+    printer(right_labels{});
+
+    return out;
+  }
+
 public:
   constexpr static auto left_label_dim_map = array_of<left_labels>::value;
   constexpr static auto right_label_dim_map = array_of<right_labels>::value;
@@ -35,6 +57,8 @@ public:
          fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb,
          fixed_string<sizeof...(CsRes)> lres)
       : matrices{A, B}, lstr{la}, rstr{lb}, resstr{lres} {}
+
+  constexpr auto eval() {}
 
 private:
   std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,

@@ -8,6 +8,7 @@
 #include <string_view>
 #include <tuple>
 #include <vector>
+#include <iostream>
 
 using MatA = Matrix<int, 2, 2>;
 using MatB = Matrix<int, 2, 2>;
@@ -32,17 +33,9 @@ int main() {
   std::mdspan<int, std::extents<size_t,2,2>> mdA{A.data()};
   std::mdspan<int, std::extents<size_t,2,2>> mdB{B.data()};
 
-  std::vector A2{1, 1, 1, 2};
-  std::vector B2{0, 1, 2, 3};
+  holder a{mdA, mdB,"ij","jk","ik"};
+  constexpr auto lmap = holder::left_label_dim_map;
+  constexpr auto rmap = holder::right_label_dim_map;
 
-  std::mdspan<int, std::extents<size_t,2,2>> mdA2{A2.data()};
-  std::mdspan<int, std::extents<size_t,2,2>> mdB2{B2.data()};
-  holder a{mdA, mdB,"ij","ji","ik"};
-  int c = 0;
-  //Einsum einsum("bhwi,bhwj->bij", mdA, mdB);
-  //std::cout << einsum;
-
-  //auto prod = einsum.make_result_indices();
-
-
+  std::cout << a;
 }
