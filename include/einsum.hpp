@@ -1,13 +1,9 @@
 //
 // Created by sayan on 4/26/25.
 //
-#ifndef MATRIXHOLDER_HPP
-#define MATRIXHOLDER_HPP
+#pragma once
 
-#ifndef TRAITS_HPP
 #include "traits.hpp"
-#endif
-
 #include <experimental/mdspan>
 #include <ostream>
 
@@ -37,7 +33,8 @@ public:
                                     Labels<CsRes...>>::type;
   using collapsed_labels =
       extract_labeled_dimensions_t<collapsed_dims, merged_labels>;
-  using output_labels = extract_labeled_dimensions_t<Labels<CsRes...>, merged_labels>;
+  using output_labels =
+      extract_labeled_dimensions_t<Labels<CsRes...>, merged_labels>;
   friend std::ostream &operator<<(std::ostream &out, const Einsum &w) {
 
     auto printer = [&]<typename TupleLike>(TupleLike tpl) {
@@ -138,4 +135,17 @@ Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
               decltype(make_labels<LA>()), decltype(make_labels<LB>()),
               decltype(make_labels<LRES>())>;
 
-#endif // MATRIXHOLDER_HPP
+consteval std::pair<std::string_view, std::string_view>
+split_arrow(std::string_view str) {
+  auto dash_pos = str.find('-');
+  auto arrow_pos = str.find('>');
+  auto lview = str.substr(0, dash_pos);
+  auto rview = str.substr(arrow_pos + 1);
+  return {lview, rview};
+}
+
+consteval auto split_comma(std::string_view str) {
+  const auto pos = str.find(',');
+  std::array<std::string_view,2> { str.substr(0,pos), str.substr(pos+1) };
+}
+

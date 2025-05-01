@@ -1,15 +1,10 @@
 //
 // Created by sayan on 4/25/25.
 //
-#include "../include/einsum.hpp"
-#include "helpers.hpp"
-#include "traits.hpp"
+#include "einsum.hpp"
 #include <algorithm>
 #include <iostream>
 #include <ranges>
-#include <string_view>
-#include <tuple>
-#include <unordered_map>
 #include <vector>
 
 using MatA = Matrix<int, 2, 2>;

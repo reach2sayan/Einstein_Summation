@@ -2,11 +2,9 @@
 // Created by sayan on 4/30/25.
 //
 
-#ifndef FIXED_STRING_HPP
-#define FIXED_STRING_HPP
+#pragma once
 
 #include <utility>
-#include <vector>
 
 template <std::size_t N> struct fixed_string {
   char data[N];
@@ -37,5 +35,3 @@ template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
   }
   return true;
 }
-
-#endif //FIXED_STRING_HPP

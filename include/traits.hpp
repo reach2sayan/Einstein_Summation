@@ -2,13 +2,9 @@
 // Created by sayan on 4/29/25.
 //
 
-#ifndef TRAITS_HPP
-#define TRAITS_HPP
+#pragma once
 
-#ifndef FIXED_STRING_HPP
 #include "fixed_string.hpp"
-#endif
-
 #include <array>
 #include <tuple>
 
@@ -215,6 +211,3 @@ struct extract_labeled_dimensions<Labels<Cs...>, LabeledTuple> {
 
 template <typename Labels, typename LabeledTuple>
 using extract_labeled_dimensions_t = typename extract_labeled_dimensions<Labels, LabeledTuple>::type;
-
-
-#endif // TRAITS_HPP
