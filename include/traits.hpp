@@ -85,20 +85,17 @@ struct filter<Pred, Labels<Cs...>> {
   using type = typename concat_all<maybe_label<Cs>...>::type;
 };
 
-// Union of two label packs (allows duplicates)
 template <typename A, typename B> struct union_of;
 template <char... As, char... Bs>
 struct union_of<Labels<As...>, Labels<Bs...>> {
   using type = Labels<As..., Bs...>;
 };
 
-// Difference: A - B (remove from A any element in B)
 template <typename A, typename B> struct difference;
 template <char... As, char... Bs>
 struct difference<Labels<As...>, Labels<Bs...>> {
   template <char C>
   struct not_in_B : std::bool_constant<!contains<C, Bs...>::value> {};
-
   using type = typename filter<not_in_B, Labels<As...>>::type;
 };
 
@@ -182,21 +179,17 @@ template <typename Tuple>
 using cartesian_from_labeled_dims_t =
     typename cartesian_from_labeled_dims<Tuple>::type;
 
-template <char Label, typename Tuple>
-struct find_by_label;
+template <char Label, typename Tuple> struct find_by_label;
 
-template <char Label>
-struct find_by_label<Label, std::tuple<>> {
+template <char Label> struct find_by_label<Label, std::tuple<>> {
   using type = void;
 };
 
 template <char Label, std::size_t Dim, char L, typename... Rest>
 struct find_by_label<Label, std::tuple<LabeledDimension<Dim, L>, Rest...>> {
   using type = std::conditional_t<
-      Label == L,
-      LabeledDimension<Dim, L>,
-      typename find_by_label<Label, std::tuple<Rest...>>::type
-  >;
+      Label == L, LabeledDimension<Dim, L>,
+      typename find_by_label<Label, std::tuple<Rest...>>::type>;
 };
 
 template <typename Labels, typename LabeledTuple>
@@ -205,37 +198,41 @@ struct extract_labeled_dimensions;
 template <char... Cs, typename LabeledTuple>
 struct extract_labeled_dimensions<Labels<Cs...>, LabeledTuple> {
   using type = std::tuple<
-    LabeledDimension<find_by_label<Cs, LabeledTuple>::type::dim, Cs>...
-  >;
+      LabeledDimension<find_by_label<Cs, LabeledTuple>::type::dim, Cs>...>;
 };
 
 template <typename Labels, typename LabeledTuple>
-using extract_labeled_dimensions_t = typename extract_labeled_dimensions<Labels, LabeledTuple>::type;
+using extract_labeled_dimensions_t =
+    typename extract_labeled_dimensions<Labels, LabeledTuple>::type;
 
 template <typename T>
-struct unwrap_singleton_tuple {
+struct unwrap_tuple {
   using type = T;
 };
 
-// Specialization: unwrap std::tuple<T>
 template <typename T>
-struct unwrap_singleton_tuple<std::tuple<T>> {
+struct unwrap_tuple<std::tuple<T>> {
   using type = T;
 };
 
-// Transform each pair in outer tuple
+// Transform a single inner std::tuple<A, std::tuple<B>> -> std::tuple<A, B>
+template <typename Pair>
+struct flatten_pair;
+
+template <typename A, typename BWrapped>
+struct flatten_pair<std::tuple<A, BWrapped>> {
+  using B = typename unwrap_tuple<BWrapped>::type;
+  using type = std::tuple<A, B>;
+};
+
+// Transform the outer std::tuple<...>
 template <typename Tuple>
-struct strip_nested;
+struct flatten_tuple;
 
 template <typename... Pairs>
-struct strip_nested<std::tuple<Pairs...>> {
-  using type = std::tuple<
-      std::tuple<
-          typename std::tuple_element<0, Pairs>::type,
-          typename unwrap_singleton_tuple<typename std::tuple_element<1, Pairs>::type>::type
-      >...
-  >;
+struct flatten_tuple<std::tuple<Pairs...>> {
+  using type = std::tuple<typename flatten_pair<Pairs>::type...>;
 };
 
-template <typename Tuple>
-using strip_nested_t = typename strip_nested<Tuple>::type;
+template <typename T>
+using flatten_tuple_t = typename flatten_tuple<T>::type;

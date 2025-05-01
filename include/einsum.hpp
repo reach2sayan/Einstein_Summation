@@ -61,8 +61,8 @@ public:
     return out;
   }
 
-  //constexpr static auto left_label_dim_map = array_of<left_labels>::value;
-  //constexpr static auto right_label_dim_map = array_of<right_labels>::value;
+  // constexpr static auto left_label_dim_map = array_of<left_labels>::value;
+  // constexpr static auto right_label_dim_map = array_of<right_labels>::value;
 
 public:
   Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
@@ -141,6 +141,6 @@ split_arrow(std::string_view str) {
 
 consteval auto split_comma(std::string_view str) {
   const auto pos = str.find(',');
-  return std::array<std::string_view,2> { str.substr(0,pos), str.substr(pos+1) };
+  return std::array<std::string_view, 2>{str.substr(0, pos),
+                                         str.substr(pos + 1)};
 }
-

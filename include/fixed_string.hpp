@@ -8,7 +8,7 @@
 
 template <std::size_t N> struct fixed_string {
   char data[N];
-  constexpr fixed_string(const char (&str)[N+1]) {
+  constexpr fixed_string(const char (&str)[N + 1]) {
     for (std::size_t i = 0; i < N; ++i)
       data[i] = str[i];
   }
@@ -36,6 +36,4 @@ template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
   return true;
 }
 
-template<fixed_string fs>
-using label_t = decltype(make_labels<fs>());
-
+template <fixed_string fs> using label_t = decltype(make_labels<fs>());

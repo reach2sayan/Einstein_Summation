@@ -61,10 +61,12 @@ int main() {
 
   std::cout << a << std::endl;
 
-  using outindex = strip_nested_t<cartesian_from_labeled_dims_t<holder::output_labels>>;
+  using outindex = flatten_tuple_t<cartesian_from_labeled_dims_t<holder::output_labels>>;
+  using outindex2 = flatten_tuple_t<cartesian_from_labeled_dims_t<holder::output_labels>>;
   using collapsed_index = cartesian_from_labeled_dims_t<holder::collapsed_labels>;
 
   print_outer(outindex{});
   print_outer(collapsed_index{});
+  print_outer(outindex2{});
   //int _ = 42;
 }
