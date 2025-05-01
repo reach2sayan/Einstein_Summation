@@ -142,6 +142,22 @@ using B = Labels<'b', 'c'>;
 using Res = Labels<'c'>;
 
 using Result = collapsed_dimensions<A, B, Res>::type;
+
+template <typename Tuple>
+struct make_iota_tuple;
+
+// template <std::size_t Dim, char Label> struct LabeledDimension
+
+template <typename... Ts>
+struct make_iota_tuple<std::tuple<Ts...>> {
+  using type = std::tuple<std::make_index_sequence<Ts::dim>...>;
+};
+
+template <typename... Ts>
+using tuple_iota_t = make_iota_tuple<Ts...>::type;
+
+
+
 #endif // TRAITS_HPP
 
 #ifdef HIDE

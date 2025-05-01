@@ -19,7 +19,11 @@ template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
           char... CsB, char... CsRes>
 class Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
              Labels<CsB...>, Labels<CsRes...>> {
+#ifdef NDEBUG
 private:
+#else
+public:
+#endif
   using left_labels =
       matrix_with_labeled_dims_t<Matrix<T, DimsA...>, Labels<CsA...>>::dims;
   using right_labels =

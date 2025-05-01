@@ -23,6 +23,26 @@ constexpr fixed_string<2> fs("ij");
 using lab = decltype(make_labels<fs>());
 using holder = Einsum<int, MatA, MatB, LabelsA, LabelsB, LabelsR>;
 
+template <size_t N>
+void cartesian_product(const std::array<std::size_t, N> &sizes,
+                       auto &&callback) {
+  std::array<std::size_t, N> indices;
+
+  while (true) {
+    callback(indices); // Use the current combination
+
+    // Increment step like an odometer
+    int i = sizes.size() - 1;
+    while (i >= 0) {
+      if (++indices[i] < sizes[i])
+        break;
+      indices[i] = 0;
+      --i;
+    }
+    if (i < 0)
+      break; // Done
+  }
+}
 
 int main() {
 
@@ -35,10 +55,9 @@ int main() {
   holder a{mdA, mdB, "ij", "jk", "ik"};
   constexpr auto lmap = holder::left_label_dim_map;
   constexpr auto rmap = holder::right_label_dim_map;
-  constexpr auto mm = merge_and_check_conflicts(lmap, rmap);
-  auto l = split_comma("a,b");
-  for (auto &&[key, val] : mm) {
-    std::cout << key << " " << val << "\n";
-  }
-  std::cout << a;
+  //constexpr auto mm = merge_and_check_conflicts(lmap, rmap);
+  holder::left_labels lla{};
+
+  tuple_iota_t<holder::left_labels> tt{};
+  int _ = 0;
 }
