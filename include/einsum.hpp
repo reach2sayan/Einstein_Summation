@@ -28,15 +28,15 @@ public:
       matrix_with_labeled_dims_t<Matrix<T, DimsA...>, Labels<CsA...>>::dims;
   using right_labels =
       matrix_with_labeled_dims_t<Matrix<T, DimsB...>, Labels<CsB...>>::dims;
-  using input_labels_merged = decltype(std::tuple_cat(
-      std::declval<left_labels>(), std::declval<right_labels>()));
+  using merged_labels = decltype(std::tuple_cat(std::declval<left_labels>(),
+                                                std::declval<right_labels>()));
   static_assert(validity_checker<left_labels, right_labels>());
 
-  using collapsed_labels = extract_labeled_dimensions_t<
-      collapsed_dimensions<Labels<CsA...>, Labels<CsB...>,
-                           Labels<CsRes...>>::type,
-      input_labels_merged>;
-  using out_labels = Labels<CsRes...>;
+  using collapsed_dims =
+      typename collapsed_dimensions<Labels<CsA...>, Labels<CsB...>,
+                                    Labels<CsRes...>>::type;
+  using collapsed_labels =
+      extract_labeled_dimensions_t<collapsed_dims, merged_labels>;
 
   friend std::ostream &operator<<(std::ostream &out, const Einsum &w) {
 
