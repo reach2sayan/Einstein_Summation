@@ -32,6 +32,7 @@ public:
 
   using collapsed_labels = collapsed_dimensions<Labels<CsA...>, Labels<CsB...>,
                                                 Labels<CsRes...>>::type;
+  using out_labels = Labels<CsRes...>;
 
   friend std::ostream &operator<<(std::ostream &out, const Einsum &w) {
 

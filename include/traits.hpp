@@ -137,24 +137,12 @@ template <typename A, typename B, typename Res> struct collapsed_dimensions {
   using type = typename unique<diff>::type;
 };
 
-using A = Labels<'a', 'b'>;
-using B = Labels<'b', 'c'>;
-using Res = Labels<'c'>;
-
-using Result = collapsed_dimensions<A, B, Res>::type;
-
-template <typename Tuple>
-struct make_iota_tuple;
-
-// template <std::size_t Dim, char Label> struct LabeledDimension
-
-template <typename... Ts>
-struct make_iota_tuple<std::tuple<Ts...>> {
+template <typename Tuple> struct make_iota_tuple;
+template <typename... Ts> struct make_iota_tuple<std::tuple<Ts...>> {
   using type = std::tuple<std::make_index_sequence<Ts::dim>...>;
 };
 
-template <typename... Ts>
-using tuple_iota_t = make_iota_tuple<Ts...>::type;
+template <typename... Ts> using tuple_iota_t = make_iota_tuple<Ts...>::type;
 
 template <typename T, typename Tuple> struct prepend_all;
 
@@ -185,9 +173,7 @@ struct cartesian_product<std::index_sequence<Is...>, Rest...> {
 template <typename TupleOfLabeledDims> struct cartesian_from_labeled_dims {
 private:
   using iota_tuple = tuple_iota_t<TupleOfLabeledDims>;
-
   template <typename... Seqs> struct apply;
-
   template <typename... Seqs> struct apply<std::tuple<Seqs...>> {
     using type = typename cartesian_product<Seqs...>::type;
   };
@@ -200,68 +186,20 @@ template <typename Tuple>
 using cartesian_from_labeled_dims_t =
     typename cartesian_from_labeled_dims<Tuple>::type;
 
+template <char Label, typename Tuple>
+struct find_by_label;
+
+template <char Label>
+struct find_by_label<Label, std::tuple<>> {
+  using type = void;
+};
+
+template <char Label, std::size_t Dim, char L, typename... Rest>
+struct find_by_label<Label, std::tuple<LabeledDimension<Dim, L>, Rest...>> {
+  using type = std::conditional_t<
+      Label == L,
+      LabeledDimension<Dim, L>,
+      typename find_by_label<Label, std::tuple<Rest...>>::type
+  >;
+};
 #endif // TRAITS_HPP
-
-#ifdef HIDE
-template <typename Tuple> struct labels_of;
-
-template <typename Head, typename... Tail>
-struct labels_of<std::tuple<Head, Tail...>> {
-  constexpr static std::array value = {Head::label, Tail::label...};
-};
-
-template <typename Tuple> struct dims_of;
-
-template <typename Head, typename... Tail>
-struct dims_of<std::tuple<Head, Tail...>> {
-  constexpr static std::array value = {Head::dim, Tail::dim...};
-};
-
-template <typename K, typename V, std::size_t N1, std::size_t N2>
-consteval auto merge_and_check_conflicts(const std::array<std::pair<K, V>, N1>& a1,
-                                         const std::array<std::pair<K, V>, N2>& a2) {
-  std::array<std::pair<K, V>, N1 + N2> result{};
-  std::size_t result_size = 0;
-
-  // First, copy all entries from a1
-  for (std::size_t i = 0; i < N1; ++i) {
-    result[result_size++] = a1[i];
-  }
-
-  // Then process entries from a2
-  for (std::size_t i = 0; i < N2; ++i) {
-    const auto& [key, val] = a2[i];
-    bool found = false;
-
-    // Check for conflicts
-    for (std::size_t j = 0; j < result_size; ++j) {
-      if (result[j].first == key) {
-        found = true;
-        if (result[j].second != val) {
-          // Conflict detected - handle as appropriate for your needs
-          // In a constexpr context, we could use static_assert or just return an error indicator
-          return std::array<std::pair<K, V>, 0>{}; // Empty array signals error
-        }
-        break;
-      }
-    }
-
-    // If not found and no conflict, add it
-    if (!found) {
-      result[result_size++] = a2[i];
-    }
-  }
-
-  // Return only the filled part
-  std::array<std::pair<K, V>, N1 + N2> final_result{};
-  for (std::size_t i = 0; i < result_size; ++i) {
-    final_result[i] = result[i];
-  }
-
-  return final_result;
-}
-
-
-static_assert(get_dim_by_label<'i', lsA>::dim == 2);
-static_assert(get_dim_by_label<'j', lsB>::dim == 2);
-#endif

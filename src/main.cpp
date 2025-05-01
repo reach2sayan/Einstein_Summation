@@ -23,6 +23,13 @@ constexpr fixed_string<2> fs("ij");
 using lab = decltype(make_labels<fs>());
 using holder = Einsum<int, MatA, MatB, LabelsA, LabelsB, LabelsR>;
 
+
+using A = Labels<'a', 'b'>;
+using B = Labels<'b', 'c'>;
+using Res = Labels<'c'>;
+
+using Result1 = collapsed_dimensions<A, B, Res>::type;
+
 int main() {
 
   std::vector A{1, 1, 1, 2};
@@ -34,10 +41,10 @@ int main() {
   holder a{mdA, mdB, "ij", "jk", "ik"};
   constexpr auto lmap = holder::left_label_dim_map;
   constexpr auto rmap = holder::right_label_dim_map;
-  //constexpr auto mm = merge_and_check_conflicts(lmap, rmap);
   holder::left_labels lla{};
 
   tuple_iota_t<holder::left_labels> tt{};
   cartesian_from_labeled_dims_t<holder::left_labels> cst{};
+  using Merged = merge_dimensions<holder::left_labels, holder::right_labels>::type;
   int _ = 0;
 }
