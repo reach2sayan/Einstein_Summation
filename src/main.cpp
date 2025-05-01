@@ -45,6 +45,5 @@ int main() {
 
   tuple_iota_t<holder::left_labels> tt{};
   cartesian_from_labeled_dims_t<holder::left_labels> cst{};
-  using Merged = merge_dimensions<holder::left_labels, holder::right_labels>::type;
   int _ = 0;
 }
