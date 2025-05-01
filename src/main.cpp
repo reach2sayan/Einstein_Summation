@@ -23,12 +23,11 @@ constexpr fixed_string<2> fs("ij");
 using lab = decltype(make_labels<fs>());
 using holder = Einsum<int, MatA, MatB, LabelsA, LabelsB, LabelsR>;
 
+using A = Labels<'i', 'j'>;
+using B = Labels<'j', 'k'>;
+using Res = Labels<'i','k'>;
 
-using A = Labels<'a', 'b'>;
-using B = Labels<'b', 'c'>;
-using Res = Labels<'c'>;
-
-using Result1 = collapsed_dimensions<A, B, Res>::type;
+using collapsed = collapsed_dimensions<A,B,Res>::type;
 
 int main() {
 
@@ -46,4 +45,12 @@ int main() {
   tuple_iota_t<holder::left_labels> tt{};
   cartesian_from_labeled_dims_t<holder::left_labels> cst{};
   int _ = 0;
+  using Res = Labels<'i','k'>;
+  using merged_labels =
+      decltype(std::tuple_cat(std::declval<holder::left_labels>(),
+                              std::declval<holder::right_labels>()));
+
+  using Result = extract_labeled_dimensions_t<Labels<'i','j'>, merged_labels>;
+
+  using fbl = find_by_label<'j',merged_labels>::type;
 }

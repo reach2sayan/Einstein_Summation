@@ -28,10 +28,14 @@ public:
       matrix_with_labeled_dims_t<Matrix<T, DimsA...>, Labels<CsA...>>::dims;
   using right_labels =
       matrix_with_labeled_dims_t<Matrix<T, DimsB...>, Labels<CsB...>>::dims;
+  using input_labels_merged = decltype(std::tuple_cat(
+      std::declval<left_labels>(), std::declval<right_labels>()));
   static_assert(validity_checker<left_labels, right_labels>());
 
-  using collapsed_labels = collapsed_dimensions<Labels<CsA...>, Labels<CsB...>,
-                                                Labels<CsRes...>>::type;
+  using collapsed_labels = extract_labeled_dimensions_t<
+      collapsed_dimensions<Labels<CsA...>, Labels<CsB...>,
+                           Labels<CsRes...>>::type,
+      input_labels_merged>;
   using out_labels = Labels<CsRes...>;
 
   friend std::ostream &operator<<(std::ostream &out, const Einsum &w) {
@@ -54,9 +58,10 @@ public:
     return out;
   }
 
-public:
   constexpr static auto left_label_dim_map = array_of<left_labels>::value;
   constexpr static auto right_label_dim_map = array_of<right_labels>::value;
+
+public:
   Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
          std::mdspan<T, std::extents<size_t, DimsB...>> B,
          fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb,
@@ -66,15 +71,15 @@ public:
   constexpr auto eval();
 
 private:
-  std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
-            std::mdspan<T, std::extents<size_t, DimsA...>>>
+  const std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
+                  std::mdspan<T, std::extents<size_t, DimsB...>>>
       matrices;
 
-  fixed_string<sizeof...(CsA)> lstr;
-  fixed_string<sizeof...(CsA)> rstr;
-  fixed_string<sizeof...(CsA)> resstr;
+  const fixed_string<sizeof...(CsA)> lstr;
+  const fixed_string<sizeof...(CsB)> rstr;
+  const fixed_string<sizeof...(CsRes)> resstr;
 
-private: // std::get interface
+private: // std::get<> interface
   template <std::size_t N, typename... Us>
   friend constexpr decltype(auto) get(Einsum<Us...> &);
   template <std::size_t N, typename... Us>
@@ -83,19 +88,19 @@ private: // std::get interface
   friend constexpr decltype(auto) get(Einsum<Us...> &&);
 };
 
-
 template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
           char... CsB, char... CsRes>
 constexpr auto
 Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
        Labels<CsB...>, Labels<CsRes...>>::eval() {
 
-  auto tuple_to_array = []<typename TupleT, size_t... Is>(TupleT tuple, std::index_sequence<Is...>) {
-    return std::array{ decltype(std::get<Is>(tuple))::dim...};
+  auto tuple_to_array = []<typename TupleT, size_t... Is>(
+                            TupleT tuple, std::index_sequence<Is...>) {
+    return std::array{decltype(std::get<Is>(tuple))::dim...};
   };
 
-  auto left_dims = tuple_to_array(left_labels{}, std::make_index_sequence<sizeof...(DimsA)>());
-
+  auto left_dims = tuple_to_array(left_labels{},
+                                  std::make_index_sequence<sizeof...(DimsA)>());
 }
 
 namespace std {

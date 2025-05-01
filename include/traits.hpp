@@ -202,4 +202,19 @@ struct find_by_label<Label, std::tuple<LabeledDimension<Dim, L>, Rest...>> {
       typename find_by_label<Label, std::tuple<Rest...>>::type
   >;
 };
+
+template <typename Labels, typename LabeledTuple>
+struct extract_labeled_dimensions;
+
+template <char... Cs, typename LabeledTuple>
+struct extract_labeled_dimensions<Labels<Cs...>, LabeledTuple> {
+  using type = std::tuple<
+    LabeledDimension<find_by_label<Cs, LabeledTuple>::type::dim, Cs>...
+  >;
+};
+
+template <typename Labels, typename LabeledTuple>
+using extract_labeled_dimensions_t = typename extract_labeled_dimensions<Labels, LabeledTuple>::type;
+
+
 #endif // TRAITS_HPP
