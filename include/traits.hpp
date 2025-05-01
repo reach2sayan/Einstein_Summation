@@ -156,7 +156,49 @@ struct make_iota_tuple<std::tuple<Ts...>> {
 template <typename... Ts>
 using tuple_iota_t = make_iota_tuple<Ts...>::type;
 
+template <typename T, typename Tuple> struct prepend_all;
 
+template <typename T, typename... Tuples>
+struct prepend_all<T, std::tuple<Tuples...>> {
+  using type = std::tuple<std::tuple<T, Tuples>...>;
+};
+
+template <typename... Seqs> struct cartesian_product;
+
+template <std::size_t... Is>
+struct cartesian_product<std::index_sequence<Is...>> {
+  using type =
+      std::tuple<std::tuple<std::integral_constant<std::size_t, Is>>...>;
+};
+
+template <std::size_t... Is, typename... Rest>
+struct cartesian_product<std::index_sequence<Is...>, Rest...> {
+  using rest_product = typename cartesian_product<Rest...>::type;
+
+  template <std::size_t I>
+  using prepend = typename prepend_all<std::integral_constant<std::size_t, I>,
+                                       rest_product>::type;
+
+  using type = decltype(std::tuple_cat(std::declval<prepend<Is>>()...));
+};
+
+template <typename TupleOfLabeledDims> struct cartesian_from_labeled_dims {
+private:
+  using iota_tuple = tuple_iota_t<TupleOfLabeledDims>;
+
+  template <typename... Seqs> struct apply;
+
+  template <typename... Seqs> struct apply<std::tuple<Seqs...>> {
+    using type = typename cartesian_product<Seqs...>::type;
+  };
+
+public:
+  using type = typename apply<iota_tuple>::type;
+};
+
+template <typename Tuple>
+using cartesian_from_labeled_dims_t =
+    typename cartesian_from_labeled_dims<Tuple>::type;
 
 #endif // TRAITS_HPP
 

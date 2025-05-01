@@ -22,32 +22,34 @@ split_arrow(std::string_view str) {
   return {lview, rview};
 }
 
-template <typename K, typename V, std::size_t N1, std::size_t N2>
+template <typename Label, typename Dim, std::size_t N1, std::size_t N2>
 consteval auto
-merge_and_check_conflicts(const std::array<std::pair<K, V>, N1> &a1,
-                           const std::array<std::pair<K, V>, N2> &a2) {
-  std::array<std::pair<K, V>, N1 + N2> result{};
+merge_and_check_conflicts(const std::array<std::pair<Label, Dim>, N1> &a1,
+                           const std::array<std::pair<Label, Dim>, N2> &a2) {
+  std::array<Dim, N1 + N2> result{};
+  std::array<Label, N1 + N2> result_keys{};
   std::size_t result_size = 0;
   for (std::size_t i = 0; i < N1; ++i) {
-    result[result_size++] = a1[i];
+    result[result_size] = a1[i].second;
+    result_keys[result_size++] = a1[i].first;
   }
   for (std::size_t i = 0; i < N2; ++i) {
     const auto &[key, val] = a2[i];
     bool found = false;
 
     for (std::size_t j = 0; j < result_size; ++j) {
-      if (result[j].first == key) {
+      if (result_keys[j] == key) {
         found = true;
         assert(result[j].second == val);
         break;
       }
     }
     if (!found) {
-      result[result_size++] = a2[i];
+      result[result_size++] = a2[i].second;
     }
   }
 
-  std::array<std::pair<K, V>, N1 + N2> final_result{};
+  std::array<Dim, N1 + N2> final_result{};
   for (std::size_t i = 0; i < result_size; ++i) {
     final_result[i] = result[i];
   }
