@@ -37,7 +37,7 @@ public:
                                     Labels<CsRes...>>::type;
   using collapsed_labels =
       extract_labeled_dimensions_t<collapsed_dims, merged_labels>;
-
+  using output_labels = extract_labeled_dimensions_t<Labels<CsRes...>, merged_labels>;
   friend std::ostream &operator<<(std::ostream &out, const Einsum &w) {
 
     auto printer = [&]<typename TupleLike>(TupleLike tpl) {

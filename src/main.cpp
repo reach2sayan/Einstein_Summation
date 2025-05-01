@@ -44,4 +44,5 @@ int main() {
   holder::right_labels rla{};
   holder::collapsed_labels lra{};
   holder::collapsed_dims cdims{};
+  holder::output_labels lres{};
 }
