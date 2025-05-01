@@ -52,6 +52,12 @@ public:
     out << "Right Matrix Labels (with dimensions):\n";
     printer(right_labels{});
 
+    out << "Result Labels (with dimensions):\n";
+    printer(output_labels{});
+
+    out << "Collapsed Labels (with dimensions):\n";
+    printer(collapsed_labels{});
+
     return out;
   }
 

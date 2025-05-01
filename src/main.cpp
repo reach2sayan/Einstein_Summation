@@ -14,9 +14,10 @@ using LabelsB = Labels<'j', 'k'>;
 using LabelsR = Labels<'i', 'k'>;
 const char strp[4] = "ijk";
 std::string_view str(strp);
-constexpr fixed_string<2> fs("ij");
-using lab = decltype(make_labels<fs>());
-using holder = Einsum<int, MatA, MatB, LabelsA, LabelsB, LabelsR>;
+
+template<fixed_string fs>
+using label_t = decltype(make_labels<fs>());
+
 
 using A = Labels<'i', 'j'>;
 using B = Labels<'j', 'k'>;
@@ -32,7 +33,12 @@ int main() {
   std::mdspan<int, std::extents<size_t, 2, 2>> mdA{A.data()};
   std::mdspan<int, std::extents<size_t, 2, 2>> mdB{B.data()};
 
-  holder a{mdA, mdB, "ij", "jk", "ik"};
+  constexpr fixed_string<2> ls("ij");
+  constexpr fixed_string<2> rs("jk");
+  constexpr fixed_string<2> ress("ik");
+
+  using holder = Einsum<int, MatA, MatB, label_t<ls>, label_t<rs>, label_t<ress>>;
+  holder a{mdA, mdB, ls, rs, ress};
   constexpr auto lmap = holder::left_label_dim_map;
   constexpr auto rmap = holder::right_label_dim_map;
   holder::left_labels lla{};
@@ -40,4 +46,6 @@ int main() {
   holder::collapsed_labels lra{};
   holder::collapsed_dims cdims{};
   holder::output_labels lres{};
+
+  std::cout << a << std::endl;
 }

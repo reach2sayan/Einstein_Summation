@@ -23,7 +23,7 @@ template <fixed_string fs> constexpr auto make_labels() {
   auto helper = []<std::size_t... Is>(std::index_sequence<Is...>) {
     return Labels<fs[Is]...>{};
   };
-  return helper(std::make_index_sequence<fs.size() - 1>{});
+  return helper(std::make_index_sequence<fs.size()>{});
 }
 
 template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
