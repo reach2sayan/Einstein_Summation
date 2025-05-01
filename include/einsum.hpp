@@ -61,8 +61,8 @@ public:
     return out;
   }
 
-  constexpr static auto left_label_dim_map = array_of<left_labels>::value;
-  constexpr static auto right_label_dim_map = array_of<right_labels>::value;
+  //constexpr static auto left_label_dim_map = array_of<left_labels>::value;
+  //constexpr static auto right_label_dim_map = array_of<right_labels>::value;
 
 public:
   Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
@@ -130,17 +130,6 @@ constexpr decltype(auto) get(Einsum<Ts...> &&w) {
   return std::get<N>(std::move(w.matrices));
 }
 
-template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
-          char... CsB, char... CsRes, fixed_string LA, fixed_string LB,
-          fixed_string LRES>
-Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
-       std::mdspan<T, std::extents<size_t, DimsB...>> B,
-       fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb,
-       fixed_string<sizeof...(CsRes)> lres)
-    -> Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>,
-              decltype(make_labels<LA>()), decltype(make_labels<LB>()),
-              decltype(make_labels<LRES>())>;
-
 consteval std::pair<std::string_view, std::string_view>
 split_arrow(std::string_view str) {
   auto dash_pos = str.find('-');
@@ -152,6 +141,6 @@ split_arrow(std::string_view str) {
 
 consteval auto split_comma(std::string_view str) {
   const auto pos = str.find(',');
-  std::array<std::string_view,2> { str.substr(0,pos), str.substr(pos+1) };
+  return std::array<std::string_view,2> { str.substr(0,pos), str.substr(pos+1) };
 }
 

@@ -15,15 +15,34 @@ using LabelsR = Labels<'i', 'k'>;
 const char strp[4] = "ijk";
 std::string_view str(strp);
 
-template<fixed_string fs>
-using label_t = decltype(make_labels<fs>());
-
+template<typename...>
+struct TD;
 
 using A = Labels<'i', 'j'>;
 using B = Labels<'j', 'k'>;
 using Res = Labels<'i', 'k'>;
 
 using collapsed = collapsed_dimensions<A, B, Res>::type;
+
+template <typename T>
+void print_integral_constant(T) {
+  std::cout << T::value;
+}
+
+// Print inner tuple like (0, 1)
+template <typename Tuple, std::size_t... Is>
+void print_inner(const Tuple& t, std::index_sequence<Is...>) {
+  std::cout << "(";
+  ((std::cout << std::tuple_element_t<Is, Tuple>::value << (Is + 1 < sizeof...(Is) ? ", " : "")), ...);
+  std::cout << ")";
+}
+
+// Print outer tuple of tuples
+template <typename... Tuples>
+void print_outer(const std::tuple<Tuples...>&) {
+  ((print_inner<Tuples>(Tuples{}, std::make_index_sequence<std::tuple_size_v<Tuples>>{}), std::cout << "\n"), ...);
+}
+
 
 int main() {
 
@@ -39,13 +58,13 @@ int main() {
 
   using holder = Einsum<int, MatA, MatB, label_t<ls>, label_t<rs>, label_t<ress>>;
   holder a{mdA, mdB, ls, rs, ress};
-  constexpr auto lmap = holder::left_label_dim_map;
-  constexpr auto rmap = holder::right_label_dim_map;
-  holder::left_labels lla{};
-  holder::right_labels rla{};
-  holder::collapsed_labels lra{};
-  holder::collapsed_dims cdims{};
-  holder::output_labels lres{};
 
   std::cout << a << std::endl;
+
+  using outindex = strip_nested_t<cartesian_from_labeled_dims_t<holder::output_labels>>;
+  using collapsed_index = cartesian_from_labeled_dims_t<holder::collapsed_labels>;
+
+  print_outer(outindex{});
+  print_outer(collapsed_index{});
+  //int _ = 42;
 }

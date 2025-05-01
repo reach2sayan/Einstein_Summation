@@ -211,3 +211,31 @@ struct extract_labeled_dimensions<Labels<Cs...>, LabeledTuple> {
 
 template <typename Labels, typename LabeledTuple>
 using extract_labeled_dimensions_t = typename extract_labeled_dimensions<Labels, LabeledTuple>::type;
+
+template <typename T>
+struct unwrap_singleton_tuple {
+  using type = T;
+};
+
+// Specialization: unwrap std::tuple<T>
+template <typename T>
+struct unwrap_singleton_tuple<std::tuple<T>> {
+  using type = T;
+};
+
+// Transform each pair in outer tuple
+template <typename Tuple>
+struct strip_nested;
+
+template <typename... Pairs>
+struct strip_nested<std::tuple<Pairs...>> {
+  using type = std::tuple<
+      std::tuple<
+          typename std::tuple_element<0, Pairs>::type,
+          typename unwrap_singleton_tuple<typename std::tuple_element<1, Pairs>::type>::type
+      >...
+  >;
+};
+
+template <typename Tuple>
+using strip_nested_t = typename strip_nested<Tuple>::type;

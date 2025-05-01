@@ -35,3 +35,7 @@ template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
   }
   return true;
 }
+
+template<fixed_string fs>
+using label_t = decltype(make_labels<fs>());
+
