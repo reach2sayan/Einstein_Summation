@@ -27,8 +27,6 @@ FetchContent_Declare(
         GIT_TAG stable
 )
 FetchContent_MakeAvailable(mdspan)
-find_package(Eigen3 REQUIRED)
-link_directories(${Eigen_INCLUDE_DIRS})
 
 add_executable(einsum src/main.cpp)
 
@@ -36,7 +34,6 @@ target_include_directories(einsum PRIVATE
         ${mdspan_SOURCE_DIR}/include
         ${CMAKE_SOURCE_DIR}/include
 )
-target_link_libraries(einsum PUBLIC ${Eigen_LIBRARIES})
 
 
 #add_executable(tests tests.cpp)
