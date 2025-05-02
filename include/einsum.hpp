@@ -103,13 +103,6 @@ constexpr auto
 Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
        Labels<CsB...>, Labels<CsRes...>>::eval() {
 
-  auto tuple_to_array = []<typename TupleT, size_t... Is>(
-                            TupleT tuple, std::index_sequence<Is...>) {
-    return std::array{decltype(std::get<Is>(tuple))::dim...};
-  };
-
-  auto left_dims = tuple_to_array(left_labels{},
-                                  std::make_index_sequence<sizeof...(DimsA)>());
 }
 
 namespace std {

@@ -44,12 +44,6 @@ template <typename... Tuples> void print_outer(const std::tuple<Tuples...> &) {
    ...);
 }
 
-using AT = std::tuple<
-    std::integral_constant<long unsigned int, 0>,
-    std::tuple<std::integral_constant<long unsigned int, 0>,
-               std::tuple<std::integral_constant<long unsigned int, 0>>>>;
-using ATF = flatten_tuple_t<AT>;
-
 void first_test() {
   std::vector A{1, 1, 1, 2};
   std::vector B{0, 1, 2, 3};
@@ -93,6 +87,8 @@ int main() {
       Einsum<int, MatA2, MatB2, label_t<ls2>, label_t<rs2>, label_t<ress2>>;
   holder2 a2{mdA2, mdB2, ls2, rs2, ress2};
 
+  holder2::right_labels rl{};
+  //TD<cartesian_from_labeled_dims_t<holder2::output_labels>>{};
   using outindex = map_flatten_tuple_t<
       cartesian_from_labeled_dims_t<holder2::output_labels>>;
   using collapsed_index = map_flatten_tuple_t<
