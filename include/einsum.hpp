@@ -35,6 +35,12 @@ public:
       extract_labeled_dimensions_t<collapsed_dims, merged_labels>;
   using output_labels =
       extract_labeled_dimensions_t<Labels<CsRes...>, merged_labels>;
+
+  using out_index =
+      map_flatten_tuple_t<cartesian_from_labeled_dims_t<output_labels>>;
+  using collapsed_index =
+      map_flatten_tuple_t<cartesian_from_labeled_dims_t<collapsed_labels>>;
+
   friend std::ostream &operator<<(std::ostream &out, const Einsum &w) {
 
     auto printer = [&]<typename TupleLike>(TupleLike tpl) {

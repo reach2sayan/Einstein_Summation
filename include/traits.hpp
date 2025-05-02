@@ -205,50 +205,22 @@ template <typename Labels, typename LabeledTuple>
 using extract_labeled_dimensions_t =
     typename extract_labeled_dimensions<Labels, LabeledTuple>::type;
 
-template <typename T>
-struct unwrap_tuple {
-  using type = T;
-};
-
-template <typename T>
-struct unwrap_tuple<std::tuple<T>> {
-  using type = T;
-};
-
-// Transform a single inner std::tuple<A, std::tuple<B>> -> std::tuple<A, B>
-template <typename Pair>
-struct flatten_pair;
-
-template <typename A, typename BWrapped>
-struct flatten_pair<std::tuple<A, BWrapped>> {
-  using B = typename unwrap_tuple<BWrapped>::type;
-  using type = std::tuple<A, B>;
-};
-
-// Transform the outer std::tuple<...>
-template <typename Tuple>
-struct flatten_tuple;
-
-template <typename... Pairs>
-struct flatten_tuple<std::tuple<Pairs...>> {
-  using type = std::tuple<typename flatten_pair<Pairs>::type...>;
-};
-
-template <typename T>
-using flatten_tuple_t = typename flatten_tuple<T>::type;
-
-template <typename T>
-struct flatten_tuple2 {
+template <typename T> struct flatten_tuple {
   using type = std::tuple<T>;
 };
 
-// Recursive case: flatten each element of the tuple
-template <typename... Ts>
-struct flatten_tuple2<std::tuple<Ts...>> {
-  using type = decltype(std::tuple_cat(std::declval<typename flatten_tuple2<Ts>::type>()...));
+template <typename... Ts> struct flatten_tuple<std::tuple<Ts...>> {
+  using type = decltype(std::tuple_cat(
+      std::declval<typename flatten_tuple<Ts>::type>()...));
 };
 
-// Helper alias
-template <typename T>
-using flatten_tuple_t2 = typename flatten_tuple2<T>::type;
+template <typename T> using flatten_tuple_t = typename flatten_tuple<T>::type;
 
+template <typename Tuple> struct map_flatten_tuple;
+
+template <typename... Ts> struct map_flatten_tuple<std::tuple<Ts...>> {
+  using type = std::tuple<flatten_tuple_t<Ts>...>;
+};
+
+template <typename T>
+using map_flatten_tuple_t = typename map_flatten_tuple<T>::type;
