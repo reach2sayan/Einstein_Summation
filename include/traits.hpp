@@ -236,3 +236,19 @@ struct flatten_tuple<std::tuple<Pairs...>> {
 
 template <typename T>
 using flatten_tuple_t = typename flatten_tuple<T>::type;
+
+template <typename T>
+struct flatten_tuple2 {
+  using type = std::tuple<T>;
+};
+
+// Recursive case: flatten each element of the tuple
+template <typename... Ts>
+struct flatten_tuple2<std::tuple<Ts...>> {
+  using type = decltype(std::tuple_cat(std::declval<typename flatten_tuple2<Ts>::type>()...));
+};
+
+// Helper alias
+template <typename T>
+using flatten_tuple_t2 = typename flatten_tuple2<T>::type;
+
