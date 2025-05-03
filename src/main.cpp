@@ -113,13 +113,16 @@ int main() {
   using L = Labels<'c', 'a'>;*/
 
   using out = holder2::output_labels;
-  out _o{};
-  using f = std::tuple_element_t<0, out>;
   using f1 = std::tuple_element_t<5, outindex>;
-  constexpr f _f{};
-  f1 _f1{};
-  constexpr auto ff = find_index_by_label<'j',out,0>::value;
+
+  using coll = holder2::collapsed_labels;
+  using f2 = std::tuple_element_t<3, collapsed_index>;
+
   using result = project_by_labels<out, f1, label_t<ress2>>::type;
 
+
+  using result2col = project_by_labels<coll, f2, label_t<rs2>>::type;
+
+  result rs{};
   int _ = 42;
 }

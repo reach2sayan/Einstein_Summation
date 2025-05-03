@@ -227,26 +227,42 @@ template <typename... Ts> struct map_flatten_tuple<std::tuple<Ts...>> {
 template <typename T>
 using map_flatten_tuple_t = typename map_flatten_tuple<T>::type;
 
+constexpr std::size_t NOT_FOUND = static_cast<std::size_t>(-1);
+
 template <char Label, typename Tuple, std::size_t Index = 0>
 struct find_index_by_label;
 
 template <char Label, typename Head, typename... Tail, std::size_t Index>
 struct find_index_by_label<Label, std::tuple<Head, Tail...>, Index> {
   static constexpr std::size_t value =
-      Head::label == Label
+      (Head::label == Label)
           ? Index
           : find_index_by_label<Label, std::tuple<Tail...>, Index + 1>::value;
 };
 
 template <char Label, std::size_t Index>
 struct find_index_by_label<Label, std::tuple<>, Index> {
-  static constexpr std::size_t value = 42;
+  static constexpr std::size_t value = NOT_FOUND;
 };
 
-template <typename LDsTuple, typename IntsTuple, char... Cs>
-struct extract_by_labels {
-  using type = std::tuple<typename std::tuple_element<
-      find_index_by_label<Cs, LDsTuple, 0>::value, IntsTuple>::type...>;
+template <typename LDs, typename Ints, char... Cs> struct extract_by_labels;
+
+template <typename LDs, typename Ints> struct extract_by_labels<LDs, Ints> {
+  using type = std::tuple<>;
+};
+
+template <typename LDs, typename Ints, char C, char... Cs>
+struct extract_by_labels<LDs, Ints, C, Cs...> {
+private:
+  static constexpr std::size_t index = find_index_by_label<C, LDs>::value;
+  using tail = typename extract_by_labels<LDs, Ints, Cs...>::type;
+
+public:
+  using type = std::conditional_t<
+      (index == NOT_FOUND), std::type_identity_t<tail>,
+      std::type_identity_t<decltype(std::tuple_cat(
+          std::declval<std::tuple<std::tuple_element_t<0, Ints>>>(),
+          std::declval<tail>()))>>;
 };
 
 template <typename LDs, typename Ints, typename Labels>
