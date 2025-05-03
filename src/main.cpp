@@ -94,8 +94,32 @@ int main() {
   using collapsed_index = map_flatten_tuple_t<
       cartesian_from_labeled_dims_t<holder2::collapsed_labels>>;
 
+
+  holder2::merged_labels{};
+  using k = find_by_label<'i',holder2::merged_labels>::type;
+  constexpr k _k{};
   std::cout << a2 << std::endl;
   print_outer(outindex{});
   print_outer(collapsed_index{});
+
+  /*
+  using A = std::tuple<LD<2, 'a'>, LD<3, 'b'>, LD<4, 'c'>>;
+  using B = std::tuple<
+      std::integral_constant<std::size_t, 10>,
+      std::integral_constant<std::size_t, 20>,
+      std::integral_constant<std::size_t, 30>
+  >;
+
+  using L = Labels<'c', 'a'>;*/
+
+  using out = holder2::output_labels;
+  out _o{};
+  using f = std::tuple_element_t<0, out>;
+  using f1 = std::tuple_element_t<5, outindex>;
+  constexpr f _f{};
+  f1 _f1{};
+  constexpr auto ff = find_index_by_label<'j',out,0>::value;
+  using result = project_by_labels<out, f1, label_t<ress2>>::type;
+
   int _ = 42;
 }

@@ -31,6 +31,8 @@ template <std::size_t Dim, char Label> struct LabeledDimension {
   static constexpr char label = Label;
 };
 
+template <std::size_t Dim, char Label> using LD = LabeledDimension<Dim, Label>;
+
 template <typename... LabeledDimensions> struct LabeledExtents {
   using dims = std::tuple<LabeledDimensions...>;
 };
@@ -224,3 +226,33 @@ template <typename... Ts> struct map_flatten_tuple<std::tuple<Ts...>> {
 
 template <typename T>
 using map_flatten_tuple_t = typename map_flatten_tuple<T>::type;
+
+template <char Label, typename Tuple, std::size_t Index = 0>
+struct find_index_by_label;
+
+template <char Label, typename Head, typename... Tail, std::size_t Index>
+struct find_index_by_label<Label, std::tuple<Head, Tail...>, Index> {
+  static constexpr std::size_t value =
+      Head::label == Label
+          ? Index
+          : find_index_by_label<Label, std::tuple<Tail...>, Index + 1>::value;
+};
+
+template <char Label, std::size_t Index>
+struct find_index_by_label<Label, std::tuple<>, Index> {
+  static constexpr std::size_t value = 42;
+};
+
+template <typename LDsTuple, typename IntsTuple, char... Cs>
+struct extract_by_labels {
+  using type = std::tuple<typename std::tuple_element<
+      find_index_by_label<Cs, LDsTuple, 0>::value, IntsTuple>::type...>;
+};
+
+template <typename LDs, typename Ints, typename Labels>
+struct project_by_labels;
+
+template <typename LDs, typename Ints, char... Cs>
+struct project_by_labels<LDs, Ints, Labels<Cs...>> {
+  using type = typename extract_by_labels<LDs, Ints, Cs...>::type;
+};
