@@ -54,21 +54,14 @@ public:
     };
     out << "Left Matrix Labels (with dimensions):\n";
     printer(left_labels{});
-
     out << "Right Matrix Labels (with dimensions):\n";
     printer(right_labels{});
-
     out << "Result Labels (with dimensions):\n";
     printer(output_labels{});
-
     out << "Collapsed Labels (with dimensions):\n";
     printer(collapsed_labels{});
-
     return out;
   }
-
-  // constexpr static auto left_label_dim_map = array_of<left_labels>::value;
-  // constexpr static auto right_label_dim_map = array_of<right_labels>::value;
 
 public:
   Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
@@ -87,47 +80,13 @@ private:
   const fixed_string<sizeof...(CsA)> lstr;
   const fixed_string<sizeof...(CsB)> rstr;
   const fixed_string<sizeof...(CsRes)> resstr;
-
-private: // std::get<> interface
-  template <std::size_t N, typename... Us>
-  friend constexpr decltype(auto) get(Einsum<Us...> &);
-  template <std::size_t N, typename... Us>
-  friend constexpr decltype(auto) get(const Einsum<Us...> &);
-  template <std::size_t N, typename... Us>
-  friend constexpr decltype(auto) get(Einsum<Us...> &&);
 };
 
 template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
           char... CsB, char... CsRes>
 constexpr auto
 Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
-       Labels<CsB...>, Labels<CsRes...>>::eval() {
-
-}
-
-namespace std {
-template <typename... Ts>
-struct tuple_size<Einsum<Ts...>> : std::integral_constant<std::size_t, 2> {};
-
-template <std::size_t N, typename... Ts>
-struct tuple_element<N, Einsum<Ts...>> {
-  using type = std::tuple_element_t<N, std::tuple<Ts...>>;
-};
-} // namespace std
-
-template <std::size_t N, typename... Ts>
-constexpr decltype(auto) get(Einsum<Ts...> &w) {
-  return std::get<N>(w.matrices);
-}
-template <std::size_t N, typename... Ts>
-constexpr decltype(auto) get(const Einsum<Ts...> &w) {
-  return std::get<N>(w.matrices);
-}
-
-template <std::size_t N, typename... Ts>
-constexpr decltype(auto) get(Einsum<Ts...> &&w) {
-  return std::get<N>(std::move(w.matrices));
-}
+       Labels<CsB...>, Labels<CsRes...>>::eval() {}
 
 consteval std::pair<std::string_view, std::string_view>
 split_arrow(std::string_view str) {
