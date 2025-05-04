@@ -69,8 +69,7 @@ void first_test() {
   print_outer(collapsed_index{});
 }
 
-int main() {
-  first_test();
+void second_test() {
 
   std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
   std::vector B2{2, 5, 0, 1, 5, 7, 9, 2, 2, 3, 5, 1, 7, 5, 6, 3};
@@ -113,16 +112,48 @@ int main() {
   using L = Labels<'c', 'a'>;*/
 
   using out = holder2::output_labels;
-  using f1 = std::tuple_element_t<5, outindex>;
+  using f1 = std::tuple_element_t<0, outindex>;
 
   using coll = holder2::collapsed_labels;
-  using f2 = std::tuple_element_t<3, collapsed_index>;
+  using f2 = std::tuple_element_t<0, collapsed_index>;
 
-  using result = project_by_labels<out, f1, label_t<ress2>>::type;
+  using Out = std::tuple<LD<2,'b'>, LD<2,'h'>, LD<2,'w'>, LD<2,'i'>>;
+  using Res = std::tuple<LD<2,'b'>, LD<2,'i'>>;
+  using ResIdx = std::tuple<std::integral_constant<size_t,1>, std::integral_constant<size_t,3>>;
+  using Col = std::tuple<LD<2,'h'>, LD<2,'w'>>;
+  using ColIdx = std::tuple<std::integral_constant<size_t,0>, std::integral_constant<size_t,2>>;
 
-
-  using result2col = project_by_labels<coll, f2, label_t<rs2>>::type;
-
-  result rs{};
+  constexpr auto result = build_result_tuple<Out, Res, ResIdx, Col, ColIdx>();
+  static_assert(std::is_same_v<std::remove_cv_t<decltype(result)>, std::tuple<
+          std::integral_constant<std::size_t,1>, std::integral_constant<std::size_t,0>,
+          std::integral_constant<std::size_t,2>, std::integral_constant<std::size_t,3>>>);
+  //TD<decltype(result)>{};
   int _ = 42;
+}
+
+
+void third_test() {
+  using MatA = Matrix<int, 6,2,3>;
+  using MatB = Matrix<int, 6,3,4>;
+
+  constexpr fixed_string<3> ls2("bmd");
+  constexpr fixed_string<3> rs2("bdn");
+  constexpr fixed_string<3> ress2("bmn");
+  using holder2 =
+      Einsum<int, MatA, MatB, label_t<ls2>, label_t<rs2>, label_t<ress2>>;
+
+  holder2::right_labels rl{};
+  //TD<cartesian_from_labeled_dims_t<holder2::output_labels>>{};
+  using outindex = map_flatten_tuple_t<
+      cartesian_from_labeled_dims_t<holder2::output_labels>>;
+  using collapsed_index = map_flatten_tuple_t<
+      cartesian_from_labeled_dims_t<holder2::collapsed_labels>>;
+  print_outer(outindex{});
+  print_outer(collapsed_index{});
+}
+
+int main() {
+  //first_test();
+  second_test();
+  //third_test();
 }

@@ -245,30 +245,27 @@ struct find_index_by_label<Label, std::tuple<>, Index> {
   static constexpr std::size_t value = NOT_FOUND;
 };
 
-template <typename LDs, typename Ints, char... Cs> struct extract_by_labels;
+template <typename Out, typename Res, typename ResIdx, typename Col,
+          typename ColIdx, std::size_t... Is>
+constexpr auto build_result_tuple_impl(std::index_sequence<Is...>) {
+  return std::tuple {
+    []<std::size_t I>() {
+      constexpr char label = std::tuple_element_t<I, Out>::label;
 
-template <typename LDs, typename Ints> struct extract_by_labels<LDs, Ints> {
-  using type = std::tuple<>;
-};
-
-template <typename LDs, typename Ints, char C, char... Cs>
-struct extract_by_labels<LDs, Ints, C, Cs...> {
-private:
-  static constexpr std::size_t index = find_index_by_label<C, LDs>::value;
-  using tail = typename extract_by_labels<LDs, Ints, Cs...>::type;
-
-public:
-  using type = std::conditional_t<
-      (index == NOT_FOUND), std::type_identity_t<tail>,
-      std::type_identity_t<decltype(std::tuple_cat(
-          std::declval<std::tuple<std::tuple_element_t<0, Ints>>>(),
-          std::declval<tail>()))>>;
-};
-
-template <typename LDs, typename Ints, typename Labels>
-struct project_by_labels;
-
-template <typename LDs, typename Ints, char... Cs>
-struct project_by_labels<LDs, Ints, Labels<Cs...>> {
-  using type = typename extract_by_labels<LDs, Ints, Cs...>::type;
-};
+      constexpr std::size_t res_pos = find_index_by_label<label, Res>::value;
+      if constexpr (res_pos != NOT_FOUND) {
+        return std::tuple_element_t<res_pos, ResIdx>{};
+      } else {
+        constexpr std::size_t col_pos = find_index_by_label<label, Col>::value;
+        static_assert(col_pos != NOT_FOUND, "Label not found in Res or Col");
+        return std::tuple_element_t<col_pos, ColIdx>{};
+      }
+    }.template operator()<Is>()...
+  };
+}
+template <typename Out, typename Res, typename ResIdx, typename Col,
+          typename ColIdx>
+constexpr auto build_result_tuple() {
+  return build_result_tuple_impl<Out, Res, ResIdx, Col, ColIdx>(
+      std::make_index_sequence<std::tuple_size_v<Out>>{});
+}

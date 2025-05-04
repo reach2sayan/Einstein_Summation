@@ -36,12 +36,12 @@ target_include_directories(einsum PRIVATE
 )
 
 
-#add_executable(tests tests.cpp)
-#target_link_libraries(tests gtest_main)
-#target_include_directories(tests PRIVATE
-#${CMAKE_SOURCE_DIR}/include
-#${mdspan_SOURCE_DIR}/include
-#)
+add_executable(tests tests.cpp)
+target_link_libraries(tests gtest_main)
+target_include_directories(tests PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${mdspan_SOURCE_DIR}/include
+)
 
-#add_test(NAME tests COMMAND tests)
-#enable_testing()
+add_test(NAME tests COMMAND tests)
+enable_testing()
