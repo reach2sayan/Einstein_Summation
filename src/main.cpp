@@ -50,9 +50,10 @@ void first_test() {
   std::mdspan<int, std::extents<size_t, 2, 2>> mdA{A.data()};
   std::mdspan<int, std::extents<size_t, 2, 2>> mdB{B.data()};
 
-  constexpr fixed_string<2> ls("ij");
-  constexpr fixed_string<2> rs("jk");
-  constexpr fixed_string<2> ress("ik");
+  auto ks = fixed_string("ij");
+  constexpr fixed_string ls("ij");
+  constexpr fixed_string rs("jk");
+  constexpr fixed_string ress("ik");
 
   using holder =
       Einsum<int, MatA, MatB, label_t<ls>, label_t<rs>, label_t<ress>>;
@@ -101,16 +102,6 @@ void second_test() {
   print_outer(outindex{});
   print_outer(collapsed_index{});
 
-  /*
-  using A = std::tuple<LD<2, 'a'>, LD<3, 'b'>, LD<4, 'c'>>;
-  using B = std::tuple<
-      std::integral_constant<std::size_t, 10>,
-      std::integral_constant<std::size_t, 20>,
-      std::integral_constant<std::size_t, 30>
-  >;
-
-  using L = Labels<'c', 'a'>;*/
-
   using out = holder2::output_labels;
   using f1 = std::tuple_element_t<0, outindex>;
 
@@ -148,6 +139,11 @@ void third_test() {
       cartesian_from_labeled_dims_t<holder2::output_labels>>;
   using collapsed_index = map_flatten_tuple_t<
       cartesian_from_labeled_dims_t<holder2::collapsed_labels>>;
+
+  using out1 = std::tuple_element_t<3, outindex>;
+  using out2 = std::tuple_element_t<1, collapsed_index>;
+
+  using result = decltype(build_result_tuple<holder2::right_labels, holder2::output_labels, out1, holder2::collapsed_labels, out2>());
   print_outer(outindex{});
   print_outer(collapsed_index{});
 }

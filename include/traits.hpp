@@ -8,7 +8,6 @@
 #include <array>
 #include <tuple>
 
-
 template <typename T, std::size_t... Dimensions> struct Matrix {
   T *data = nullptr;
   constexpr static std::size_t rank = sizeof...(Dimensions);

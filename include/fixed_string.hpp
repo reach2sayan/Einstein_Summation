@@ -35,8 +35,7 @@ template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
   }
   return true;
 }
-
 template<std::size_t N>
-fixed_string(const char (&str)[N + 1]) -> fixed_string<N>;
+fixed_string(const char (&str)[N]) -> fixed_string<N-1>;
 
 template <fixed_string fs> using label_t = decltype(make_labels<fs>());
