@@ -87,7 +87,7 @@ void first_test() {
   ridx _ridx{};
   lidx _lidx{};
   int _ = 42;
-  a.eval();
+  a.print_eval();
 }
 
 void second_test() {
@@ -103,43 +103,37 @@ void second_test() {
 
   using MatA2 = Matrix<int, 2, 2, 2, 2>;
   using MatB2 = Matrix<int, 2, 2, 2, 2>;
-  using holder2 =
+  using holder =
       Einsum<int, MatA2, MatB2, label_t<ls2>, label_t<rs2>, label_t<ress2>>;
-  holder2 a2{mdA2, mdB2, ls2, rs2, ress2};
+  holder a2{mdA2, mdB2, ls2, rs2, ress2};
 
-  holder2::right_labels rl{};
-  //TD<cartesian_from_labeled_dims_t<holder2::output_labels>>{};
-  using outindex = map_flatten_tuple_t<
-      cartesian_from_labeled_dims_t<holder2::output_labels>>;
-  using collapsed_index = map_flatten_tuple_t<
-      cartesian_from_labeled_dims_t<holder2::collapsed_labels>>;
+  using outindex =
+       map_flatten_tuple_t<cartesian_from_labeled_dims_t<holder::output_labels>>;
+  using collapsed_index =
+      map_flatten_tuple_t<cartesian_from_labeled_dims_t<holder::collapsed_labels>>;
 
-
-  holder2::merged_labels{};
-  using k = find_by_label<'i',holder2::merged_labels>::type;
-  constexpr k _k{};
-  std::cout << a2 << std::endl;
   print_outer(outindex{});
   print_outer(collapsed_index{});
+  using right_labels = holder::right_labels;
+  using left_labels = holder::left_labels;
+  using output_labels = holder::output_labels;
+  using collapsed_labels = holder::collapsed_labels;
 
-  using out = holder2::output_labels;
-  using f1 = std::tuple_element_t<0, outindex>;
+  using outindex_f = std::tuple_element_t<0, outindex>;
+  using colindex_f = std::tuple_element_t<0, collapsed_index>;
+  using ridx =
+        flatten_tuple_t<decltype(build_result_tuple<right_labels, output_labels, outindex,
+                                    collapsed_labels, collapsed_index>())>;
+  using lidx =
+        flatten_tuple_t<decltype(build_result_tuple<left_labels, output_labels, outindex,
+                                    collapsed_labels, collapsed_index>())>;
+  outindex _o{};
 
-  using coll = holder2::collapsed_labels;
-  using f2 = std::tuple_element_t<0, collapsed_index>;
-
-  using Out = std::tuple<LD<2,'b'>, LD<2,'h'>, LD<2,'w'>, LD<2,'i'>>;
-  using Res = std::tuple<LD<2,'b'>, LD<2,'i'>>;
-  using ResIdx = std::tuple<std::integral_constant<size_t,1>, std::integral_constant<size_t,3>>;
-  using Col = std::tuple<LD<2,'h'>, LD<2,'w'>>;
-  using ColIdx = std::tuple<std::integral_constant<size_t,0>, std::integral_constant<size_t,2>>;
-
-  constexpr auto result = build_result_tuple<Out, Res, ResIdx, Col, ColIdx>();
-  static_assert(std::is_same_v<std::remove_cv_t<decltype(result)>, std::tuple<
-          std::integral_constant<std::size_t,1>, std::integral_constant<std::size_t,0>,
-          std::integral_constant<std::size_t,2>, std::integral_constant<std::size_t,3>>>);
-  //TD<decltype(result)>{};
+  outindex_f _of{};
+  ridx _ridx{};
+  lidx _lidx{};
   int _ = 42;
+  a2.print_eval();
 }
 
 
@@ -169,7 +163,7 @@ void third_test() {
 }
 
 int main() {
-  first_test();
-  //second_test();
+  //first_test();
+  second_test();
   //third_test();
 }

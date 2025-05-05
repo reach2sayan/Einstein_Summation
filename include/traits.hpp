@@ -269,3 +269,20 @@ constexpr auto build_result_tuple() {
   return build_result_tuple_impl<Out, Res, ResIdx, Col, ColIdx>(
       std::make_index_sequence<std::tuple_size_v<Out>>{});
 }
+
+template <typename Tuple, std::size_t... Is>
+auto extract_indices(const Tuple&, std::index_sequence<Is...>) {
+  return std::index_sequence<std::tuple_element_t<Is, Tuple>::value...>{};
+}
+
+// Helper to convert integral_constant tuple to index pack
+template <typename Tuple, typename F, std::size_t... Is>
+void apply_indices(const Tuple&, F&& f, std::index_sequence<Is...>) {
+  f(std::tuple_element_t<Is, Tuple>::value...);
+}
+
+template <typename Tuple, typename F>
+void for_each_index(const Tuple& t, F&& f) {
+  constexpr std::size_t N = std::tuple_size_v<Tuple>;
+  apply_indices(t, std::forward<F>(f), std::make_index_sequence<N>{});
+}

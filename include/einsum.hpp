@@ -12,7 +12,7 @@
 #endif
 
 template <typename Tuple, std::size_t... Is>
-void print_tuple(const Tuple & /*tuple*/, const char *name,
+constexpr void print_tuple(const Tuple & /*tuple*/, const char *name,
                  std::index_sequence<Is...>) {
   ((std::cout << (Is == 0 ? "" : ", ") << name << "("
               << std::tuple_element_t<Is, Tuple>::value << ")"),
@@ -20,12 +20,25 @@ void print_tuple(const Tuple & /*tuple*/, const char *name,
 }
 
 template <typename Tuple>
-void print_named_tuple(const Tuple &tuple, const char *name) {
+constexpr void print_named_tuple(const Tuple &tuple, const char *name) {
   constexpr std::size_t N = std::tuple_size_v<Tuple>;
   std::cout << "(";
   print_tuple(tuple, name, std::make_index_sequence<N>{});
   std::cout << ")";
 }
+
+template <typename Mat, typename A, typename B1, typename C1>
+void assign(Mat& MatR, Mat& MatL, Mat& MatC, const A& a, const B1& b1, const C1& c1) {
+  for_each_index(a, [&](auto... ai) {
+      for_each_index(b1, [&](auto... bi) {
+          for_each_index(c1, [&](auto... ci) {
+              MatR[ai...] = MatL[bi...] * MatC[ci...];
+          });
+      });
+  });
+}
+
+
 
 template <typename T, typename MatrixA, typename MatrixB, typename LabelA,
           typename LabelB, typename LabelR>
@@ -83,6 +96,8 @@ public:
     return out;
   }
 
+  constexpr auto print_eval();
+
 public:
   Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
          std::mdspan<T, std::extents<size_t, DimsB...>> B,
@@ -90,7 +105,6 @@ public:
          fixed_string<sizeof...(CsRes)> lres)
       : matrices{A, B}, lstr{la}, rstr{lb}, resstr{lres} {}
 
-  constexpr auto eval();
 
 private:
   const std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
@@ -106,7 +120,7 @@ template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
           char... CsB, char... CsRes>
 constexpr auto
 Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
-       Labels<CsB...>, Labels<CsRes...>>::eval() {
+       Labels<CsB...>, Labels<CsRes...>>::print_eval() {
 
   using self = typename std::decay_t<decltype(*this)>;
   auto apply_single = [=]<typename CollapsedTupleIndex, typename OutTupleIndex>(
