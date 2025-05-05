@@ -13,8 +13,8 @@
 #endif
 
 auto print_2dmd_span(std::ostream &out, auto &&mdspan) {
-  for (auto i = 0; i < mdspan.extent(0); ++i) {
-    for (auto j = 0; j < mdspan.extent(1); ++j) {
+  for (std::size_t i = 0; i < mdspan.extent(0); ++i) {
+    for (std::size_t j = 0; j < mdspan.extent(1); ++j) {
       out << mdspan[i, j] << " ";
     }
     out << "\n";
@@ -121,7 +121,7 @@ public:
   constexpr static auto
   make_mdspan(auto *data, std::integer_sequence<std::size_t, Dims...>) {
     return std::mdspan<T, std::extents<std::size_t, Dims...>>{data};
-  };
+  }
 
 public:
   Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,

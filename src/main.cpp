@@ -34,37 +34,9 @@ void first_test() {
   constexpr fixed_string ls("ij");
   constexpr fixed_string rs("jk");
   constexpr fixed_string ress("ik");
-
-  using holder =
-      Einsum<int, MatA, MatB, label_t<ls>, label_t<rs>, label_t<ress>>;
-  holder a{mdA, mdB, ls, rs, ress};
-
-  using outindex =
-      map_flatten_tuple_t<cartesian_from_labeled_dims_t<holder::output_labels>>;
-  using collapsed_index =
-      map_flatten_tuple_t<cartesian_from_labeled_dims_t<holder::collapsed_labels>>;
-
-  using right_labels = holder::right_labels;
-  using left_labels = holder::left_labels;
-  using output_labels = holder::output_labels;
-  using collapsed_labels = holder::collapsed_labels;
-
-  using outindex_f = std::tuple_element_t<0, outindex>;
-  using colindex_f = std::tuple_element_t<0, collapsed_index>;
-  using ridx =
-        flatten_tuple_t<decltype(build_result_tuple<right_labels, output_labels, outindex,
-                                    collapsed_labels, collapsed_index>())>;
-  using lidx =
-        flatten_tuple_t<decltype(build_result_tuple<left_labels, output_labels, outindex,
-                                    collapsed_labels, collapsed_index>())>;
-  outindex _o{};
-
-  outindex_f _of{};
-  ridx _ridx{};
-  lidx _lidx{};
+  auto a = make_einsum<ls,rs,ress>(mdA, mdB);
   a.eval();
   print_2dmd_span(std::cout, a.get_result());
-  auto _ = 42;
 }
 
 void second_test() {
@@ -77,48 +49,13 @@ void second_test() {
   constexpr fixed_string<4> ls2("bhwi");
   constexpr fixed_string<4> rs2("bhwj");
   constexpr fixed_string<3> ress2("bij");
-
-  using MatA2 = Matrix<int, 2, 2, 2, 2>;
-  using MatB2 = Matrix<int, 2, 2, 2, 2>;
-  using holder =
-      Einsum<int, MatA2, MatB2, label_t<ls2>, label_t<rs2>, label_t<ress2>>;
-  holder a2{mdA2, mdB2, ls2, rs2, ress2};
-
-  using outindex =
-       map_flatten_tuple_t<cartesian_from_labeled_dims_t<holder::output_labels>>;
-  using collapsed_index =
-      map_flatten_tuple_t<cartesian_from_labeled_dims_t<holder::collapsed_labels>>;
-
-  print_outer(outindex{});
-  print_outer(collapsed_index{});
-  using right_labels = holder::right_labels;
-  using left_labels = holder::left_labels;
-  using output_labels = holder::output_labels;
-  using collapsed_labels = holder::collapsed_labels;
-
-  using outindex_f = std::tuple_element_t<0, outindex>;
-  using colindex_f = std::tuple_element_t<0, collapsed_index>;
-  using ridx =
-        flatten_tuple_t<decltype(build_result_tuple<right_labels, output_labels, outindex,
-                                    collapsed_labels, collapsed_index>())>;
-  using lidx =
-        flatten_tuple_t<decltype(build_result_tuple<left_labels, output_labels, outindex,
-                                    collapsed_labels, collapsed_index>())>;
-  outindex _o{};
-
-  outindex_f _of{};
-  ridx _ridx{};
-  lidx _lidx{};
-  constexpr auto dims = extract_dims<output_labels>();
-  int* res = new int[8];
-  auto md = holder::make_mdspan(res, dims);
-  int _ = 42;
-  a2.print_eval();
-  constexpr auto rs = holder::result_size;
+  auto a2 = make_einsum<ls2,rs2,ress2>(mdA2, mdB2);
+  a2.eval();
 
   //auto md = make_md
 }
 
+/*
 void third_test() {
   using MatA = Matrix<int, 6,2,3>;
   using MatB = Matrix<int, 6,3,4>;
@@ -142,7 +79,7 @@ void third_test() {
   using result = decltype(build_result_tuple<holder2::right_labels, holder2::output_labels, out1, holder2::collapsed_labels, out2>());
   print_outer(out_index{});
   print_outer(collapsed_index{});
-}
+}*/
 
 
 void fourth_test() {
@@ -151,8 +88,6 @@ void fourth_test() {
   std::mdspan<int, std::extents<size_t, 2, 3>> mdA{A.data()};
   std::mdspan<int, std::extents<size_t, 3, 4>> mdB{B.data()};
 
-  using MatA = Matrix<int, 2, 3>;
-  using MatB = Matrix<int, 3, 4>;
   constexpr fixed_string ls("ij");
   constexpr fixed_string rs("jk");
   constexpr fixed_string ress("ik");
