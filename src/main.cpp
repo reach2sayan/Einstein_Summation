@@ -39,15 +39,11 @@ void first_test() {
       Einsum<int, MatA, MatB, label_t<ls>, label_t<rs>, label_t<ress>>;
   holder a{mdA, mdB, ls, rs, ress};
 
-  std::cout << a << std::endl;
-
   using outindex =
       map_flatten_tuple_t<cartesian_from_labeled_dims_t<holder::output_labels>>;
   using collapsed_index =
       map_flatten_tuple_t<cartesian_from_labeled_dims_t<holder::collapsed_labels>>;
 
-  print_outer(outindex{});
-  print_outer(collapsed_index{});
   using right_labels = holder::right_labels;
   using left_labels = holder::left_labels;
   using output_labels = holder::output_labels;
@@ -66,8 +62,6 @@ void first_test() {
   outindex_f _of{};
   ridx _ridx{};
   lidx _lidx{};
-
-  a.print_eval();
   a.eval();
   print_2dmd_span(std::cout, a.get_result());
   auto _ = 42;
@@ -179,7 +173,7 @@ void fourth_test() {
 
 int main() {
   fourth_test();
-  //first_test();
+  first_test();
   //second_test();
   //third_test();
 }

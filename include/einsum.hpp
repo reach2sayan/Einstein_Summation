@@ -12,7 +12,7 @@
 #include <iostream>
 #endif
 
-auto print_2dmd_span(std::ostream& out, auto&& mdspan) {
+auto print_2dmd_span(std::ostream &out, auto &&mdspan) {
   for (auto i = 0; i < mdspan.extent(0); ++i) {
     for (auto j = 0; j < mdspan.extent(1); ++j) {
       out << mdspan[i, j] << " ";
@@ -36,22 +36,6 @@ constexpr void print_named_tuple(const Tuple &tuple, const char *name) {
   std::cout << "(";
   print_tuple(tuple, name, std::make_index_sequence<N>{});
   std::cout << ")";
-}
-
-template <typename MatRes, typename MatL, typename MatR, typename A, typename B1, typename C1>
-void assign(MatRes& matres, MatL& matl, MatR& matr, const A& a, const B1& b1,
-            const C1& c1) {
-  for_each_index(a, [&](auto... ai) {
-    for_each_index(b1, [&](auto... bi) {
-      for_each_index(
-          c1, [&](auto... ci) {
-            auto mat_l = matl[bi...];
-            auto mat_r = matr[ci...];
-            auto sum = mat_l * mat_r;
-            matres[ai...] += sum;
-          });
-    });
-  });
 }
 
 template <typename T, typename MatrixA, typename MatrixB, typename LabelA,
@@ -117,6 +101,22 @@ public:
   constexpr static std::size_t result_size = tuple_dim_product<output_labels>();
   constexpr auto print_eval();
 
+  template <typename MatRes, typename MatL, typename MatR, typename A,
+            typename B1, typename C1>
+  void assign(MatRes &matres, MatL &matl, MatR &matr, const A &a, const B1 &b1,
+              const C1 &c1) {
+    for_each_index(a, [&](auto... ai) {
+      for_each_index(b1, [&](auto... bi) {
+        for_each_index(c1, [&](auto... ci) {
+          auto mat_l = matl[bi...];
+          auto mat_r = matr[ci...];
+          auto sum = mat_l * mat_r;
+          matres[ai...] += sum;
+        });
+      });
+    });
+  }
+
   template <std::size_t... Dims>
   constexpr static auto
   make_mdspan(auto *data, std::integer_sequence<std::size_t, Dims...>) {
@@ -135,6 +135,7 @@ public:
 
   constexpr auto eval();
   auto get_result() const { return result_span; }
+
 private:
   const std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
                   std::mdspan<T, std::extents<size_t, DimsB...>>>
@@ -196,8 +197,9 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
        Labels<CsB...>, Labels<CsRes...>>::eval() {
 
   using self = typename std::decay_t<decltype(*this)>;
-  auto apply_single = [this]<typename CollapsedTupleIndex, typename OutTupleIndex>(
-                          CollapsedTupleIndex, OutTupleIndex) {
+  auto apply_single = [this]<typename CollapsedTupleIndex,
+                             typename OutTupleIndex>(CollapsedTupleIndex,
+                                                     OutTupleIndex) {
     using ridx = flatten_tuple_t<
         decltype(build_result_tuple<typename self::right_labels,
                                     typename self::output_labels, OutTupleIndex,
@@ -209,7 +211,8 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
                                     typename self::collapsed_labels,
                                     CollapsedTupleIndex>())>;
 
-    assign(result_span, matrices.first, matrices.second, OutTupleIndex{}, lidx{}, ridx{});
+    assign(result_span, matrices.first, matrices.second, OutTupleIndex{},
+           lidx{}, ridx{});
   };
 
   // inner loop
