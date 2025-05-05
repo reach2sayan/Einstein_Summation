@@ -12,15 +12,28 @@
 #include <iostream>
 #endif
 
+namespace Einsum {
+
+template <fixed_string fs> constexpr auto make_labels() {
+  auto make_labels_impl = []<std::size_t... Is>(std::index_sequence<Is...>) {
+    return EinsumTraits::Labels<fs[Is]...>{};
+  };
+  return make_labels_impl(std::make_index_sequence<fs.size()>{});
+}
+
+template <fixed_string fs> using label_t = decltype(make_labels<fs>());
+
 template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
-  for (auto &&lmap : array_of<TupleA>::value) {
-    for (auto &&rmap : array_of<TupleB>::value) {
+  for (auto &&lmap : EinsumTraits::array_of<TupleA>::value) {
+    for (auto &&rmap : EinsumTraits::array_of<TupleB>::value) {
       if (lmap.first == rmap.first && lmap.second != rmap.second)
         return false;
     }
   }
   return true;
 }
+using namespace EinsumTraits;
+using EinsumTraits::Labels;
 template <typename T, typename MatrixA, typename MatrixB, typename LabelA,
           typename LabelB, typename LabelR>
 class Einsum;
@@ -211,21 +224,6 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
   std::apply(outer_loop, typename self::out_index{});
 }
 
-consteval std::pair<std::string_view, std::string_view>
-split_arrow(std::string_view str) {
-  auto dash_pos = str.find('-');
-  auto arrow_pos = str.find('>');
-  auto lview = str.substr(0, dash_pos);
-  auto rview = str.substr(arrow_pos + 1);
-  return {lview, rview};
-}
-
-consteval auto split_comma(std::string_view str) {
-  const auto pos = str.find(',');
-  return std::array<std::string_view, 2>{str.substr(0, pos),
-                                         str.substr(pos + 1)};
-}
-
 template <typename MDSpan, std::size_t... Is>
 constexpr auto make_matrix_from_mdspan(std::index_sequence<Is...>) {
   using T = typename MDSpan::element_type;
@@ -251,5 +249,6 @@ constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
                                                        fsres};
 }
 
-#define einsum(left, right, result, A, B)                                      \
-  make_einsum_impl<left, right, result>(A, B)
+#define einsum(left, right, result, A, B) make_einsum_impl<left, right, result>(A, B)
+
+}

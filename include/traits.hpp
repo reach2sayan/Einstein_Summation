@@ -8,6 +8,7 @@
 #include <array>
 #include <tuple>
 
+namespace EinsumTraits {
 template <typename T, std::size_t... Dimensions> struct Matrix {
   T *data = nullptr;
   constexpr static std::size_t rank = sizeof...(Dimensions);
@@ -271,36 +272,37 @@ constexpr auto build_result_tuple() {
 }
 
 template <typename Tuple, std::size_t... Is>
-constexpr auto extract_indices(const Tuple&, std::index_sequence<Is...>) {
+constexpr auto extract_indices(const Tuple &, std::index_sequence<Is...>) {
   return std::index_sequence<std::tuple_element_t<Is, Tuple>::value...>{};
 }
 
 // Helper to convert integral_constant tuple to index pack
 template <typename Tuple, typename F, std::size_t... Is>
-constexpr void apply_indices(const Tuple&, F&& f, std::index_sequence<Is...>) {
+constexpr void apply_indices(const Tuple &, F &&f, std::index_sequence<Is...>) {
   f(std::tuple_element_t<Is, Tuple>::value...);
 }
 
 template <typename Tuple, typename F>
-constexpr void for_each_index(const Tuple& t, F&& f) {
+constexpr void for_each_index(const Tuple &t, F &&f) {
   constexpr std::size_t N = std::tuple_size_v<Tuple>;
   apply_indices(t, std::forward<F>(f), std::make_index_sequence<N>{});
 }
 
-template <typename Tuple>
-constexpr std::size_t tuple_dim_product() {
-  auto tuple_dim_product_impl = []<std::size_t... Is>(std::index_sequence<Is...>) {
-    return (1 * ... * (std::tuple_element_t<Is, Tuple>::dim));
-  };
-  return tuple_dim_product_impl(std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+template <typename Tuple> constexpr std::size_t tuple_dim_product() {
+  auto tuple_dim_product_impl =
+      []<std::size_t... Is>(std::index_sequence<Is...>) {
+        return (1 * ... * (std::tuple_element_t<Is, Tuple>::dim));
+      };
+  return tuple_dim_product_impl(
+      std::make_index_sequence<std::tuple_size_v<Tuple>>{});
 }
 
-template <typename Tuple>
-constexpr auto extract_dims() {
+template <typename Tuple> constexpr auto extract_dims() {
   auto extract_dims_impl = []<std::size_t... Is>(std::index_sequence<Is...>) {
-    return std::integer_sequence<std::size_t, std::tuple_element_t<Is, Tuple>::dim...>{};
+    return std::integer_sequence<std::size_t,
+                                 std::tuple_element_t<Is, Tuple>::dim...>{};
   };
-  return extract_dims_impl(std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+  return extract_dims_impl(
+      std::make_index_sequence<std::tuple_size_v<Tuple>>{});
 }
-
-// --- Convert integer_sequence to mdspan ---
+} // namespace EinsumTraits

@@ -3,7 +3,6 @@
 //
 
 #pragma once
-
 #include <utility>
 
 template <std::size_t N> struct fixed_string {
@@ -16,22 +15,14 @@ template <std::size_t N> struct fixed_string {
   constexpr std::size_t size() const { return N; }
 };
 
-template <char... Cs> struct Labels;
-template <typename Tuple> struct array_of;
-
-template <fixed_string fs> constexpr auto make_labels() {
-  auto helper = []<std::size_t... Is>(std::index_sequence<Is...>) {
-    return Labels<fs[Is]...>{};
-  };
-  return helper(std::make_index_sequence<fs.size()>{});
-}
-
 template<std::size_t N>
 fixed_string(const char (&str)[N]) -> fixed_string<N-1>;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
 template <typename CharT, CharT... Cs>
 constexpr auto operator""_fs() {
   constexpr char str[] = {Cs...};
   return fixed_string<sizeof...(Cs)>{str};
 }
-template <fixed_string fs> using label_t = decltype(make_labels<fs>());
+#pragma GCC diagnostic pop

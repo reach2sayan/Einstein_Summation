@@ -3,3 +3,8 @@
 //
 
 #include <gtest/gtest.h>
+#include "einsum.hpp"
+
+TEST(EinsumTest, 2DMatrix) {
+
+}

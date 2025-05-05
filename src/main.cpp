@@ -8,19 +8,22 @@
 #include <ranges>
 #include <vector>
 
+using namespace Einsum;
+using namespace EinsumTraits;
+
 using MatA = Matrix<int, 2, 2>;
 using MatB = Matrix<int, 2, 2>;
-using LabelsA = Labels<'i', 'j'>;
-using LabelsB = Labels<'j', 'k'>;
-using LabelsR = Labels<'i', 'k'>;
+using LabelsA = EinsumTraits::Labels<'i', 'j'>;
+using LabelsB = EinsumTraits::Labels<'j', 'k'>;
+using LabelsR = EinsumTraits::Labels<'i', 'k'>;
 const char strp[4] = "ijk";
 std::string_view str(strp);
 
 template <typename...> struct TD;
 
-using A = Labels<'i', 'j'>;
-using B = Labels<'j', 'k'>;
-using Res = Labels<'i', 'k'>;
+using A = EinsumTraits::Labels<'i', 'j'>;
+using B = EinsumTraits::Labels<'j', 'k'>;
+using Res = EinsumTraits::Labels<'i', 'k'>;
 
 using collapsed = collapsed_dimensions<A, B, Res>::type;
 
