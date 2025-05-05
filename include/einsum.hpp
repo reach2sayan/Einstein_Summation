@@ -5,15 +5,26 @@
 
 #include "traits.hpp"
 #include <experimental/mdspan>
+#include <memory>
 #include <ostream>
 
 #ifndef NDEBUG
 #include <iostream>
 #endif
 
+auto print_2dmd_span(std::ostream& out, auto&& mdspan) {
+  for (auto i = 0; i < mdspan.extent(0); ++i) {
+    for (auto j = 0; j < mdspan.extent(1); ++j) {
+      out << mdspan[i, j] << " ";
+    }
+    out << "\n";
+  }
+  out << "\n";
+}
+
 template <typename Tuple, std::size_t... Is>
 constexpr void print_tuple(const Tuple & /*tuple*/, const char *name,
-                 std::index_sequence<Is...>) {
+                           std::index_sequence<Is...>) {
   ((std::cout << (Is == 0 ? "" : ", ") << name << "("
               << std::tuple_element_t<Is, Tuple>::value << ")"),
    ...);
@@ -27,18 +38,19 @@ constexpr void print_named_tuple(const Tuple &tuple, const char *name) {
   std::cout << ")";
 }
 
-template <typename Mat, typename A, typename B1, typename C1>
-void assign(Mat& MatR, Mat& MatL, Mat& MatC, const A& a, const B1& b1, const C1& c1) {
+template <typename MatRes, typename MatL, typename MatR, typename A, typename B1, typename C1>
+void assign(MatRes& matres, MatL& matl, MatR& matr, const A a, const B1 b1,
+            const C1 c1) {
   for_each_index(a, [&](auto... ai) {
-      for_each_index(b1, [&](auto... bi) {
-          for_each_index(c1, [&](auto... ci) {
-              MatR[ai...] = MatL[bi...] * MatC[ci...];
+    for_each_index(b1, [&](auto... bi) {
+      for_each_index(
+          c1, [&](auto... ci) {
+            auto sum = matl[bi...] * matr[ci...];
+            matres[ai...] += sum;
           });
-      });
+    });
   });
 }
-
-
 
 template <typename T, typename MatrixA, typename MatrixB, typename LabelA,
           typename LabelB, typename LabelR>
@@ -93,18 +105,35 @@ public:
     printer(output_labels{});
     out << "Collapsed Labels (with dimensions):\n";
     printer(collapsed_labels{});
+
+
+    out << "Left Matrix :\n";
+    print_2dmd_span(out, w.matrices.first);
+    out << "Right Matrix :\n";
+    print_2dmd_span(out, w.matrices.second);
+
     return out;
   }
-
+  constexpr static std::size_t result_size = tuple_dim_product<output_labels>();
   constexpr auto print_eval();
+
+  template <std::size_t... Dims>
+  constexpr static auto
+  make_mdspan(auto *data, std::integer_sequence<std::size_t, Dims...>) {
+    return std::mdspan<T, std::extents<std::size_t, Dims...>>{data};
+  };
 
 public:
   Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
          std::mdspan<T, std::extents<size_t, DimsB...>> B,
          fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb,
          fixed_string<sizeof...(CsRes)> lres)
-      : matrices{A, B}, lstr{la}, rstr{lb}, resstr{lres} {}
+      : matrices{A, B}, lstr{la}, rstr{lb}, resstr{lres},
+        result_matrix{new T[std::decay_t<decltype(*this)>::result_size]},
+        result_span{make_mdspan(result_matrix, extract_dims<output_labels>())} {
+  }
 
+  constexpr auto eval();
 
 private:
   const std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
@@ -114,6 +143,9 @@ private:
   const fixed_string<sizeof...(CsA)> lstr;
   const fixed_string<sizeof...(CsB)> rstr;
   const fixed_string<sizeof...(CsRes)> resstr;
+  T *result_matrix;
+  decltype(make_mdspan(result_matrix,
+                       extract_dims<output_labels>())) result_span;
 };
 
 template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
@@ -151,11 +183,46 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
         [=](auto &&...args_inner) {
           (apply_single(args_inner, TupleLike{}), ...);
         },
-        (typename self::collapsed_index){});
+        typename self::collapsed_index{});
   };
 
   auto outer_loop = [=](auto &&...args) { (collapsing_loop(args), ...); };
-  std::apply(outer_loop, (typename self::out_index){});
+  std::apply(outer_loop, typename self::out_index{});
+}
+template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
+          char... CsB, char... CsRes>
+constexpr auto
+Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
+       Labels<CsB...>, Labels<CsRes...>>::eval() {
+
+  using self = typename std::decay_t<decltype(*this)>;
+  auto apply_single = [this]<typename CollapsedTupleIndex, typename OutTupleIndex>(
+                          CollapsedTupleIndex, OutTupleIndex) {
+    using ridx = flatten_tuple_t<
+        decltype(build_result_tuple<typename self::right_labels,
+                                    typename self::output_labels, OutTupleIndex,
+                                    typename self::collapsed_labels,
+                                    CollapsedTupleIndex>())>;
+    using lidx = flatten_tuple_t<
+        decltype(build_result_tuple<typename self::left_labels,
+                                    typename self::output_labels, OutTupleIndex,
+                                    typename self::collapsed_labels,
+                                    CollapsedTupleIndex>())>;
+
+    assign(matrices.first, matrices.second, result_span, OutTupleIndex{}, lidx{}, ridx{});
+  };
+
+  // inner loop
+  auto collapsing_loop = [=]<typename TupleLike>(TupleLike) {
+    std::apply(
+        [=](auto &&...args_inner) {
+          (apply_single(args_inner, TupleLike{}), ...);
+        },
+        typename self::collapsed_index{});
+  };
+
+  auto outer_loop = [=](auto &&...args) { (collapsing_loop(args), ...); };
+  std::apply(outer_loop, typename self::out_index{});
 }
 
 consteval std::pair<std::string_view, std::string_view>

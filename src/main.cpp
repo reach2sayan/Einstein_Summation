@@ -86,8 +86,10 @@ void first_test() {
   outindex_f _of{};
   ridx _ridx{};
   lidx _lidx{};
-  int _ = 42;
+
   a.print_eval();
+  a.eval();
+  auto _ = 42;
 }
 
 void second_test() {
@@ -132,8 +134,14 @@ void second_test() {
   outindex_f _of{};
   ridx _ridx{};
   lidx _lidx{};
+  constexpr auto dims = extract_dims<output_labels>();
+  int* res = new int[8];
+  auto md = holder::make_mdspan(res, dims);
   int _ = 42;
   a2.print_eval();
+  constexpr auto rs = holder::result_size;
+
+  //auto md = make_md
 }
 
 
@@ -163,7 +171,7 @@ void third_test() {
 }
 
 int main() {
-  //first_test();
-  second_test();
+  first_test();
+  //second_test();
   //third_test();
 }

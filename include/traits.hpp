@@ -271,18 +271,40 @@ constexpr auto build_result_tuple() {
 }
 
 template <typename Tuple, std::size_t... Is>
-auto extract_indices(const Tuple&, std::index_sequence<Is...>) {
+constexpr auto extract_indices(const Tuple&, std::index_sequence<Is...>) {
   return std::index_sequence<std::tuple_element_t<Is, Tuple>::value...>{};
 }
 
 // Helper to convert integral_constant tuple to index pack
 template <typename Tuple, typename F, std::size_t... Is>
-void apply_indices(const Tuple&, F&& f, std::index_sequence<Is...>) {
+constexpr void apply_indices(const Tuple&, F&& f, std::index_sequence<Is...>) {
   f(std::tuple_element_t<Is, Tuple>::value...);
 }
 
 template <typename Tuple, typename F>
-void for_each_index(const Tuple& t, F&& f) {
+constexpr void for_each_index(const Tuple& t, F&& f) {
   constexpr std::size_t N = std::tuple_size_v<Tuple>;
   apply_indices(t, std::forward<F>(f), std::make_index_sequence<N>{});
 }
+
+template <typename Tuple, std::size_t... Is>
+constexpr std::size_t tuple_dim_product_impl(std::index_sequence<Is...>) {
+  return (1 * ... * (std::tuple_element_t<Is, Tuple>::dim));
+}
+
+template <typename Tuple>
+constexpr std::size_t tuple_dim_product() {
+  return tuple_dim_product_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+}
+
+template <typename Tuple, std::size_t... Is>
+constexpr auto extract_dims_impl(std::index_sequence<Is...>) {
+  return std::integer_sequence<std::size_t, std::tuple_element_t<Is, Tuple>::dim...>{};
+}
+
+template <typename Tuple>
+constexpr auto extract_dims() {
+  return extract_dims_impl<Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+}
+
+// --- Convert integer_sequence to mdspan ---
