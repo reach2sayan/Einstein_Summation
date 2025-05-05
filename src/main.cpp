@@ -68,6 +68,26 @@ void first_test() {
 
   print_outer(outindex{});
   print_outer(collapsed_index{});
+  using right_labels = holder::right_labels;
+  using left_labels = holder::left_labels;
+  using output_labels = holder::output_labels;
+  using collapsed_labels = holder::collapsed_labels;
+
+  using outindex_f = std::tuple_element_t<0, outindex>;
+  using colindex_f = std::tuple_element_t<0, collapsed_index>;
+  using ridx =
+        flatten_tuple_t<decltype(build_result_tuple<right_labels, output_labels, outindex,
+                                    collapsed_labels, collapsed_index>())>;
+  using lidx =
+        flatten_tuple_t<decltype(build_result_tuple<left_labels, output_labels, outindex,
+                                    collapsed_labels, collapsed_index>())>;
+  outindex _o{};
+
+  outindex_f _of{};
+  ridx _ridx{};
+  lidx _lidx{};
+  int _ = 42;
+  a.eval();
 }
 
 void second_test() {
@@ -127,29 +147,29 @@ void third_test() {
   using MatA = Matrix<int, 6,2,3>;
   using MatB = Matrix<int, 6,3,4>;
 
-  constexpr fixed_string<3> ls2("bmd");
-  constexpr fixed_string<3> rs2("bdn");
-  constexpr fixed_string<3> ress2("bmn");
+  constexpr fixed_string ls2("bmd");
+  constexpr fixed_string rs2("bdn");
+  constexpr fixed_string ress2("bmn");
   using holder2 =
       Einsum<int, MatA, MatB, label_t<ls2>, label_t<rs2>, label_t<ress2>>;
 
   holder2::right_labels rl{};
   //TD<cartesian_from_labeled_dims_t<holder2::output_labels>>{};
-  using outindex = map_flatten_tuple_t<
+  using out_index = map_flatten_tuple_t<
       cartesian_from_labeled_dims_t<holder2::output_labels>>;
   using collapsed_index = map_flatten_tuple_t<
       cartesian_from_labeled_dims_t<holder2::collapsed_labels>>;
 
-  using out1 = std::tuple_element_t<3, outindex>;
+  using out1 = std::tuple_element_t<3, out_index>;
   using out2 = std::tuple_element_t<1, collapsed_index>;
 
   using result = decltype(build_result_tuple<holder2::right_labels, holder2::output_labels, out1, holder2::collapsed_labels, out2>());
-  print_outer(outindex{});
+  print_outer(out_index{});
   print_outer(collapsed_index{});
 }
 
 int main() {
-  //first_test();
-  second_test();
+  first_test();
+  //second_test();
   //third_test();
 }

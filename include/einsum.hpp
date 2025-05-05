@@ -7,6 +7,26 @@
 #include <experimental/mdspan>
 #include <ostream>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
+template <typename Tuple, std::size_t... Is>
+void print_tuple(const Tuple & /*tuple*/, const char *name,
+                 std::index_sequence<Is...>) {
+  ((std::cout << (Is == 0 ? "" : ", ") << name << "("
+              << std::tuple_element_t<Is, Tuple>::value << ")"),
+   ...);
+}
+
+template <typename Tuple>
+void print_named_tuple(const Tuple &tuple, const char *name) {
+  constexpr std::size_t N = std::tuple_size_v<Tuple>;
+  std::cout << "(";
+  print_tuple(tuple, name, std::make_index_sequence<N>{});
+  std::cout << ")";
+}
+
 template <typename T, typename MatrixA, typename MatrixB, typename LabelA,
           typename LabelB, typename LabelR>
 class Einsum;
@@ -86,7 +106,43 @@ template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
           char... CsB, char... CsRes>
 constexpr auto
 Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
-       Labels<CsB...>, Labels<CsRes...>>::eval() {}
+       Labels<CsB...>, Labels<CsRes...>>::eval() {
+
+  using self = typename std::decay_t<decltype(*this)>;
+  auto apply_single = [=]<typename CollapsedTupleIndex, typename OutTupleIndex>(
+                          CollapsedTupleIndex, OutTupleIndex) {
+    using ridx = flatten_tuple_t<
+        decltype(build_result_tuple<typename self::right_labels,
+                                    typename self::output_labels, OutTupleIndex,
+                                    typename self::collapsed_labels,
+                                    CollapsedTupleIndex>())>;
+    using lidx = flatten_tuple_t<
+        decltype(build_result_tuple<typename self::left_labels,
+                                    typename self::output_labels, OutTupleIndex,
+                                    typename self::collapsed_labels,
+                                    CollapsedTupleIndex>())>;
+
+    print_named_tuple(OutTupleIndex{}, "A");
+    std::cout << " = ";
+    print_named_tuple(ridx{}, "B1");
+    std::cout << " * ";
+    print_named_tuple(lidx{}, "C1");
+    std::cout << std::endl;
+    int _ = 42;
+  };
+
+  // inner loop
+  auto collapsing_loop = [=]<typename TupleLike>(TupleLike) {
+    std::apply(
+        [=](auto &&...args_inner) {
+          (apply_single(args_inner, TupleLike{}), ...);
+        },
+        (typename self::collapsed_index){});
+  };
+
+  auto outer_loop = [=](auto &&...args) { (collapsing_loop(args), ...); };
+  std::apply(outer_loop, (typename self::out_index){});
+}
 
 consteval std::pair<std::string_view, std::string_view>
 split_arrow(std::string_view str) {
