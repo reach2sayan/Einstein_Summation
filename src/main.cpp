@@ -3,16 +3,11 @@
 //
 #include "helper.hpp"
 #include "einsum.hpp"
-#include <algorithm>
 #include <iostream>
-#include <ranges>
 #include <vector>
 
-using namespace Einsum;
-using namespace EinsumTraits;
-
-using MatA = Matrix<int, 2, 2>;
-using MatB = Matrix<int, 2, 2>;
+using MatA = EinsumTraits::Matrix<int, 2, 2>;
+using MatB = EinsumTraits::Matrix<int, 2, 2>;
 using LabelsA = EinsumTraits::Labels<'i', 'j'>;
 using LabelsB = EinsumTraits::Labels<'j', 'k'>;
 using LabelsR = EinsumTraits::Labels<'i', 'k'>;
@@ -25,7 +20,7 @@ using A = EinsumTraits::Labels<'i', 'j'>;
 using B = EinsumTraits::Labels<'j', 'k'>;
 using Res = EinsumTraits::Labels<'i', 'k'>;
 
-using collapsed = collapsed_dimensions<A, B, Res>::type;
+using collapsed = EinsumTraits::collapsed_dimensions<A, B, Res>::type;
 
 
 void first_test() {

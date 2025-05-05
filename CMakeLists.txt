@@ -36,7 +36,6 @@ target_include_directories(einsum PRIVATE
         ${CMAKE_SOURCE_DIR}/include
 )
 
-
 add_executable(tests tests.cpp
         include/helper.hpp)
 target_link_libraries(tests gtest_main)

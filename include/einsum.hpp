@@ -99,8 +99,8 @@ public:
 
   template <typename MatRes, typename MatL, typename MatR, typename A,
             typename B1, typename C1>
-  void assign(MatRes &matres, MatL &matl, MatR &matr, const A &a, const B1 &b1,
-              const C1 &c1) {
+  constexpr void assign(MatRes &matres, MatL &matl, MatR &matr, const A &a,
+                        const B1 &b1, const C1 &c1) {
     for_each_index(a, [&](auto... ai) {
       for_each_index(b1, [&](auto... bi) {
         for_each_index(c1, [&](auto... ci) {
@@ -249,6 +249,7 @@ constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
                                                        fsres};
 }
 
-#define einsum(left, right, result, A, B) make_einsum_impl<left, right, result>(A, B)
+#define einsum(left, right, result, A, B)                                      \
+  Einsum::make_einsum_impl<left, right, result>(A, B)
 
-}
+} // namespace Einsum
