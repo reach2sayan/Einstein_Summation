@@ -240,7 +240,7 @@ template <typename MDSpan> constexpr auto make_matrix_from_mdspan() {
 
 template <fixed_string fsl, fixed_string fsr, fixed_string fsres,
           typename MDSpanA, typename MDSpanB>
-constexpr auto make_einsum(MDSpanA mdA, MDSpanB mdB) {
+constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
   using T = typename MDSpanA::element_type;
   using MatA = decltype(make_matrix_from_mdspan<MDSpanA>());
   using MatB = decltype(make_matrix_from_mdspan<MDSpanB>());
@@ -251,4 +251,5 @@ constexpr auto make_einsum(MDSpanA mdA, MDSpanB mdB) {
                                                        fsres};
 }
 
-#define einsum(left,right,result, A, B) make_einsum<left,right,result>(A,B)
+#define einsum(left, right, result, A, B)                                      \
+  make_einsum_impl<left, right, result>(A, B)

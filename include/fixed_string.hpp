@@ -29,4 +29,9 @@ template <fixed_string fs> constexpr auto make_labels() {
 template<std::size_t N>
 fixed_string(const char (&str)[N]) -> fixed_string<N-1>;
 
+template <typename CharT, CharT... Cs>
+constexpr auto operator""_fs() {
+  constexpr char str[] = {Cs...};
+  return fixed_string<sizeof...(Cs)>{str};
+}
 template <fixed_string fs> using label_t = decltype(make_labels<fs>());
