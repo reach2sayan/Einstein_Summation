@@ -89,6 +89,7 @@ void first_test() {
 
   a.print_eval();
   a.eval();
+  print_2dmd_span(std::cout, a.get_result());
   auto _ = 42;
 }
 

@@ -39,13 +39,15 @@ constexpr void print_named_tuple(const Tuple &tuple, const char *name) {
 }
 
 template <typename MatRes, typename MatL, typename MatR, typename A, typename B1, typename C1>
-void assign(MatRes& matres, MatL& matl, MatR& matr, const A a, const B1 b1,
-            const C1 c1) {
+void assign(MatRes& matres, MatL& matl, MatR& matr, const A& a, const B1& b1,
+            const C1& c1) {
   for_each_index(a, [&](auto... ai) {
     for_each_index(b1, [&](auto... bi) {
       for_each_index(
           c1, [&](auto... ci) {
-            auto sum = matl[bi...] * matr[ci...];
+            auto mat_l = matl[bi...];
+            auto mat_r = matr[ci...];
+            auto sum = mat_l * mat_r;
             matres[ai...] += sum;
           });
     });
@@ -105,9 +107,7 @@ public:
     printer(output_labels{});
     out << "Collapsed Labels (with dimensions):\n";
     printer(collapsed_labels{});
-
-
-    out << "Left Matrix :\n";
+    out << "\nLeft Matrix :\n";
     print_2dmd_span(out, w.matrices.first);
     out << "Right Matrix :\n";
     print_2dmd_span(out, w.matrices.second);
@@ -134,7 +134,7 @@ public:
   }
 
   constexpr auto eval();
-
+  auto get_result() const { return result_span; }
 private:
   const std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
                   std::mdspan<T, std::extents<size_t, DimsB...>>>
@@ -209,7 +209,7 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
                                     typename self::collapsed_labels,
                                     CollapsedTupleIndex>())>;
 
-    assign(matrices.first, matrices.second, result_span, OutTupleIndex{}, lidx{}, ridx{});
+    assign(result_span, matrices.first, matrices.second, OutTupleIndex{}, lidx{}, ridx{});
   };
 
   // inner loop
