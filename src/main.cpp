@@ -1,6 +1,7 @@
 //
 // Created by sayan on 4/25/25.
 //
+#include "helper.hpp"
 #include "einsum.hpp"
 #include <algorithm>
 #include <iostream>
@@ -23,26 +24,6 @@ using Res = Labels<'i', 'k'>;
 
 using collapsed = collapsed_dimensions<A, B, Res>::type;
 
-template <typename T> void print_integral_constant(T) { std::cout << T::value; }
-
-// Print inner tuple like (0, 1)
-template <typename Tuple, std::size_t... Is>
-void print_inner(const Tuple &t, std::index_sequence<Is...>) {
-  std::cout << "(";
-  ((std::cout << std::tuple_element_t<Is, Tuple>::value
-              << (Is + 1 < sizeof...(Is) ? ", " : "")),
-   ...);
-  std::cout << ")";
-}
-
-// Print outer tuple of tuples
-template <typename... Tuples> void print_outer(const std::tuple<Tuples...> &) {
-
-  ((print_inner<Tuples>(Tuples{},
-                        std::make_index_sequence<std::tuple_size_v<Tuples>>{}),
-    std::cout << "\n"),
-   ...);
-}
 
 void first_test() {
   std::vector A{1, 1, 1, 2};
@@ -50,7 +31,6 @@ void first_test() {
   std::mdspan<int, std::extents<size_t, 2, 2>> mdA{A.data()};
   std::mdspan<int, std::extents<size_t, 2, 2>> mdB{B.data()};
 
-  auto ks = fixed_string("ij");
   constexpr fixed_string ls("ij");
   constexpr fixed_string rs("jk");
   constexpr fixed_string ress("ik");
@@ -145,7 +125,6 @@ void second_test() {
   //auto md = make_md
 }
 
-
 void third_test() {
   using MatA = Matrix<int, 6,2,3>;
   using MatB = Matrix<int, 6,3,4>;
@@ -171,8 +150,36 @@ void third_test() {
   print_outer(collapsed_index{});
 }
 
+
+void fourth_test() {
+  std::vector A{0,1,2,3,4,5};
+  std::vector B{1,2,3,4,5,6,7,8,9,10,11,12};
+  std::mdspan<int, std::extents<size_t, 2, 3>> mdA{A.data()};
+  std::mdspan<int, std::extents<size_t, 3, 4>> mdB{B.data()};
+
+  using MatA = Matrix<int, 2, 3>;
+  using MatB = Matrix<int, 3, 4>;
+  constexpr fixed_string ls("ij");
+  constexpr fixed_string rs("jk");
+  constexpr fixed_string ress("ik");
+  using holder =
+      Einsum<int, MatA, MatB, label_t<ls>, label_t<rs>, label_t<ress>>;
+  holder a{mdA, mdB, ls, rs, ress};
+  holder _holder{mdA, mdB, ls, rs, ress};
+  _holder.eval();
+  auto res = _holder.get_result();
+  for (auto i = 0; i < 2; ++i) {
+    for (auto j = 0; j < 4; ++j) {
+      std::cout << res[i,j] << ", ";
+    }
+    std::cout << "\n";
+  }
+
+}
+
 int main() {
-  first_test();
+  fourth_test();
+  //first_test();
   //second_test();
   //third_test();
 }

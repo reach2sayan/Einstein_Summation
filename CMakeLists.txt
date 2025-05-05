@@ -28,7 +28,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(mdspan)
 
-add_executable(einsum src/main.cpp)
+add_executable(einsum src/main.cpp
+        include/helper.hpp)
 
 target_include_directories(einsum PRIVATE
         ${mdspan_SOURCE_DIR}/include
@@ -36,7 +37,8 @@ target_include_directories(einsum PRIVATE
 )
 
 
-add_executable(tests tests.cpp)
+add_executable(tests tests.cpp
+        include/helper.hpp)
 target_link_libraries(tests gtest_main)
 target_include_directories(tests PRIVATE
         ${CMAKE_SOURCE_DIR}/include
