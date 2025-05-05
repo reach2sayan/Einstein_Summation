@@ -22,21 +22,6 @@ using Res = EinsumTraits::Labels<'i', 'k'>;
 
 using collapsed = EinsumTraits::collapsed_dimensions<A, B, Res>::type;
 
-
-void first_test() {
-  std::vector A{1, 1, 1, 2};
-  std::vector B{0, 1, 2, 3};
-  std::mdspan<int, std::extents<size_t, 2, 2>> mdA{A.data()};
-  std::mdspan<int, std::extents<size_t, 2, 2>> mdB{B.data()};
-
-  constexpr fixed_string ls("ij");
-  constexpr fixed_string rs("jk");
-  constexpr fixed_string ress("ik");
-  auto a = einsum(ls,rs,ress,mdA, mdB);
-  a.eval();
-  print_2dmd_span(std::cout, a.get_result());
-}
-
 void second_test() {
 
   std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
@@ -76,27 +61,7 @@ void third_test() {
   print_outer(collapsed_index{});
 }*/
 
-
-void fourth_test() {
-  std::vector A{0,1,2,3,4,5};
-  std::vector B{1,2,3,4,5,6,7,8,9,10,11,12};
-  std::mdspan<int, std::extents<size_t, 2, 3>> mdA{A.data()};
-  std::mdspan<int, std::extents<size_t, 3, 4>> mdB{B.data()};
-  auto ein = einsum("ij","jk","ik",mdA, mdB);
-  ein.eval();
-  auto res = ein.get_result();
-  for (auto i = 0; i < 2; ++i) {
-    for (auto j = 0; j < 4; ++j) {
-      std::cout << res[i,j] << ", ";
-    }
-    std::cout << "\n";
-  }
-
-}
-
 int main() {
-  fourth_test();
-  first_test();
   second_test();
   //third_test();
 }
