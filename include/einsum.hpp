@@ -112,7 +112,7 @@ public:
          fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb,
          fixed_string<sizeof...(CsRes)> lres)
       : matrices{A, B}, lstr{la}, rstr{lb}, resstr{lres},
-        result_matrix{new T[std::decay_t<decltype(*this)>::result_size]},
+        result_matrix{new T[std::decay_t<decltype(*this)>::result_size]{}},
         result_span{make_mdspan(result_matrix, extract_dims<output_labels>())} {
   }
 
