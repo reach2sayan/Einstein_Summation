@@ -156,12 +156,9 @@ void fourth_test() {
   constexpr fixed_string ls("ij");
   constexpr fixed_string rs("jk");
   constexpr fixed_string ress("ik");
-  using holder =
-      Einsum<int, MatA, MatB, label_t<ls>, label_t<rs>, label_t<ress>>;
-  holder a{mdA, mdB, ls, rs, ress};
-  holder _holder{mdA, mdB, ls, rs, ress};
-  _holder.eval();
-  auto res = _holder.get_result();
+  auto ein = make_einsum<ls,rs,ress>(mdA, mdB);
+  ein.eval();
+  auto res = ein.get_result();
   for (auto i = 0; i < 2; ++i) {
     for (auto j = 0; j < 4; ++j) {
       std::cout << res[i,j] << ", ";

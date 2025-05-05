@@ -242,3 +242,27 @@ consteval auto split_comma(std::string_view str) {
   return std::array<std::string_view, 2>{str.substr(0, pos),
                                          str.substr(pos + 1)};
 }
+
+template <typename MDSpan, std::size_t... Is>
+constexpr auto make_matrix_from_mdspan(std::index_sequence<Is...>) {
+  using T = typename MDSpan::element_type;
+  using Extents = typename MDSpan::extents_type;
+  return Matrix<T, Extents::static_extent(Is)...>{};
+}
+
+template <typename MDSpan> constexpr auto make_matrix_from_mdspan() {
+  constexpr std::size_t rank = MDSpan::extents_type::rank();
+  return make_matrix_from_mdspan<MDSpan>(std::make_index_sequence<rank>{});
+}
+
+template <fixed_string fsl, fixed_string fsr, fixed_string fsres,
+          typename MDSpanA, typename MDSpanB>
+constexpr auto make_einsum(MDSpanA mdA, MDSpanB mdB) {
+  using T = typename MDSpanA::element_type;
+  using MatA = decltype(make_matrix_from_mdspan<MDSpanA>());
+  using MatB = decltype(make_matrix_from_mdspan<MDSpanB>());
+  using LabelA = label_t<fsl>;
+  using LabelB = label_t<fsr>;
+  using LabelR = label_t<fsres>;
+  return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr, fsres};
+}
