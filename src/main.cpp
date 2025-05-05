@@ -46,10 +46,7 @@ void second_test() {
   std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdA2{A2.data()};
   std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdB2{B2.data()};
   // bhwi,bhwj->bij
-  constexpr fixed_string<4> ls2("bhwi");
-  constexpr fixed_string<4> rs2("bhwj");
-  constexpr fixed_string<3> ress2("bij");
-  auto a2 = make_einsum<ls2,rs2,ress2>(mdA2, mdB2);
+  auto a2 = make_einsum<"bhwi","bhwj","bij">(mdA2, mdB2);
   a2.eval();
 
   //auto md = make_md
@@ -88,10 +85,7 @@ void fourth_test() {
   std::mdspan<int, std::extents<size_t, 2, 3>> mdA{A.data()};
   std::mdspan<int, std::extents<size_t, 3, 4>> mdB{B.data()};
 
-  constexpr fixed_string ls("ij");
-  constexpr fixed_string rs("jk");
-  constexpr fixed_string ress("ik");
-  auto ein = make_einsum<ls,rs,ress>(mdA, mdB);
+  auto ein = einsum("ij","jk","ik",mdA, mdB);
   ein.eval();
   auto res = ein.get_result();
   for (auto i = 0; i < 2; ++i) {
@@ -106,6 +100,6 @@ void fourth_test() {
 int main() {
   fourth_test();
   first_test();
-  //second_test();
+  second_test();
   //third_test();
 }

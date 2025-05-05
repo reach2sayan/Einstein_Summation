@@ -26,15 +26,6 @@ template <fixed_string fs> constexpr auto make_labels() {
   return helper(std::make_index_sequence<fs.size()>{});
 }
 
-template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
-  for (auto &&lmap : array_of<TupleA>::value) {
-    for (auto &&rmap : array_of<TupleB>::value) {
-      if (lmap.first == rmap.first && lmap.second != rmap.second)
-        return false;
-    }
-  }
-  return true;
-}
 template<std::size_t N>
 fixed_string(const char (&str)[N]) -> fixed_string<N-1>;
 

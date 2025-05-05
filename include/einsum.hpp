@@ -12,32 +12,15 @@
 #include <iostream>
 #endif
 
-auto print_2dmd_span(std::ostream &out, auto &&mdspan) {
-  for (std::size_t i = 0; i < mdspan.extent(0); ++i) {
-    for (std::size_t j = 0; j < mdspan.extent(1); ++j) {
-      out << mdspan[i, j] << " ";
+template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
+  for (auto &&lmap : array_of<TupleA>::value) {
+    for (auto &&rmap : array_of<TupleB>::value) {
+      if (lmap.first == rmap.first && lmap.second != rmap.second)
+        return false;
     }
-    out << "\n";
   }
-  out << "\n";
+  return true;
 }
-
-template <typename Tuple, std::size_t... Is>
-constexpr void print_tuple(const Tuple & /*tuple*/, const char *name,
-                           std::index_sequence<Is...>) {
-  ((std::cout << (Is == 0 ? "" : ", ") << name << "("
-              << std::tuple_element_t<Is, Tuple>::value << ")"),
-   ...);
-}
-
-template <typename Tuple>
-constexpr void print_named_tuple(const Tuple &tuple, const char *name) {
-  constexpr std::size_t N = std::tuple_size_v<Tuple>;
-  std::cout << "(";
-  print_tuple(tuple, name, std::make_index_sequence<N>{});
-  std::cout << ")";
-}
-
 template <typename T, typename MatrixA, typename MatrixB, typename LabelA,
           typename LabelB, typename LabelR>
 class Einsum;
@@ -264,5 +247,8 @@ constexpr auto make_einsum(MDSpanA mdA, MDSpanB mdB) {
   using LabelA = label_t<fsl>;
   using LabelB = label_t<fsr>;
   using LabelR = label_t<fsres>;
-  return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr, fsres};
+  return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
+                                                       fsres};
 }
+
+#define einsum(left,right,result, A, B) make_einsum<left,right,result>(A,B)
