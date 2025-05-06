@@ -181,3 +181,27 @@ TEST(EinsumTest, HadamardProduct) {
     }
   }
 }
+
+TEST(EinsumTest, HadamardProduct2) {
+  std::vector A{1, 2, 3, 4};
+  std::vector B{5, 6, 7, 8};
+  std::vector res_calc{5,12,21,32};
+
+  // Create mdspans with identical dimensions
+  std::mdspan<int, std::extents<size_t, 2, 2>> mdA{A.data()};
+  std::mdspan<int, std::extents<size_t, 2, 2>> mdB{B.data()};
+  std::mdspan<int, std::extents<size_t, 2, 2>> mdmatres{res_calc.data()};
+  // Perform element-wise multiplication (Hadamard product)
+  // "ij,ij->ij" represents element-wise multiplication in Einstein notation
+  auto ein = einsum("ij", "ij", "ij", mdA, mdB);
+  ein.eval();
+  auto result = ein.get_result();
+
+  for (auto i = 0; i < 2; i++) {
+    for (auto j = 0; j < 2; j++) {
+      auto l = result[i,j];
+      auto r = mdmatres[i,j];
+      ASSERT_EQ(l,r);
+    }
+  }
+}
