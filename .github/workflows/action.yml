@@ -8,6 +8,8 @@ on:
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -16,21 +18,9 @@ jobs:
             build_type: Release
             c_compiler: gcc
             cpp_compiler: g++
-          - os: ubuntu-latest
-            build_type: Release
-            c_compiler: clang
-            cpp_compiler: clang++
-
-    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install dependencies for Clang
-        if: matrix.cpp_compiler == 'clang++'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang libc++-dev libc++abi-dev
 
       - name: Cache CMake files
         uses: actions/cache@v3
@@ -39,21 +29,26 @@ jobs:
             ~/.cmake
             ${{ github.workspace }}/build/CMakeCache.txt
             ${{ github.workspace }}/build/CMakeFiles
-          key: ${{ runner.os }}-${{ matrix.cpp_compiler }}-cmake-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}
+          key: ${{ runner.os }}-cmake-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.cpp_compiler }}-cmake-
+            ${{ runner.os }}-cmake-
 
       - name: Set reusable strings
         id: strings
         shell: bash
         run: |
-          echo "build-output-dir=${GITHUB_WORKSPACE}/build-${{ matrix.cpp_compiler }}" >> "$GITHUB_OUTPUT"
+          echo "build-output-dir=${GITHUB_WORKSPACE}/build" >> "$GITHUB_OUTPUT"
+
+      - name: Setup MSVC Developer Command Prompt
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Configure CMake
+        if: runner.os != 'Windows'
         shell: bash
         run: >
           cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -DCMAKE_CXX_STANDARD=23
+          -DCMAKE_CXX_STANDARD=26
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
@@ -62,10 +57,10 @@ jobs:
       - name: Cache build
         uses: actions/cache@v3
         with:
-          path: ${{ steps.strings.outputs.build-output-dir }}
-          key: ${{ runner.os }}-${{ matrix.cpp_compiler }}-build-${{ hashFiles('**/*.cpp', '**/*.hpp', '**/*.h') }}
+          path: ${{ github.workspace }}/build
+          key: ${{ runner.os }}-build-${{ hashFiles('**/*.cpp', '**/*.hpp', '**/*.h') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.cpp_compiler }}-build-
+            ${{ runner.os }}-build-
 
       - name: Build
         run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
