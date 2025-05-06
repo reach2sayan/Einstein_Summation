@@ -310,46 +310,32 @@ template <char Target, char... Cs>
 constexpr std::size_t count = ((Target == Cs ? 1 : 0) + ...);
 
 // Append a char to Labels
-template <char C, typename L>
-struct append;
+template <char C, typename L> struct append;
 
-template <char C, char... Cs>
-struct append<C, Labels<Cs...>> {
+template <char C, char... Cs> struct append<C, Labels<Cs...>> {
   using type = Labels<Cs..., C>;
 };
 
-// Filter out characters that appear more than once
-template <typename In>
-struct filter_unique;
-
-template <char... Cs>
-struct filter_unique<Labels<Cs...>> {
+template <typename In> struct filter_unique;
+template <char... Cs> struct filter_unique<Labels<Cs...>> {
 private:
-  template <typename Accum, char Current, char... Rest>
-  struct helper {
+  template <typename Accum, char Current, char... Rest> struct helper {
     static constexpr std::size_t n = count<Current, Cs...>;
-    using next = std::conditional_t<
-      (n == 1),
-      typename append<Current, Accum>::type,
-      Accum>;
+    using next =
+        std::conditional_t<(n == 1), typename append<Current, Accum>::type,
+                           Accum>;
     using type = typename helper<next, Rest...>::type;
   };
-
-  // Base case
-  template <typename Accum, char Current>
-  struct helper<Accum, Current> {
+  template <typename Accum, char Current> struct helper<Accum, Current> {
     static constexpr std::size_t n = count<Current, Cs...>;
-    using type = std::conditional_t<
-      (n == 1),
-      typename append<Current, Accum>::type,
-      Accum>;
+    using type =
+        std::conditional_t<(n == 1), typename append<Current, Accum>::type,
+                           Accum>;
   };
 
 public:
   using type = typename helper<Labels<>, Cs...>::type;
 };
 
-// Alias for convenience
-template <typename L>
-using filter_unique_t = typename filter_unique<L>::type;
+template <typename L> using filter_unique_t = typename filter_unique<L>::type;
 } // namespace EinsumTraits

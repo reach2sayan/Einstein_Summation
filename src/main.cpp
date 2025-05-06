@@ -33,36 +33,8 @@ void second_test() {
   auto a3 = auto_einsum("bhwi","bhwj",mdA2, mdB2);
   a2.eval();
   a3.eval();
-  //auto md = make_md
 }
-
-/*
-void third_test() {
-  using MatA = Matrix<int, 6,2,3>;
-  using MatB = Matrix<int, 6,3,4>;
-
-  constexpr fixed_string ls2("bmd");
-  constexpr fixed_string rs2("bdn");
-  constexpr fixed_string ress2("bmn");
-  using holder2 =
-      Einsum<int, MatA, MatB, label_t<ls2>, label_t<rs2>, label_t<ress2>>;
-
-  holder2::right_labels rl{};
-  //TD<cartesian_from_labeled_dims_t<holder2::output_labels>>{};
-  using out_index = map_flatten_tuple_t<
-      cartesian_from_labeled_dims_t<holder2::output_labels>>;
-  using collapsed_index = map_flatten_tuple_t<
-      cartesian_from_labeled_dims_t<holder2::collapsed_labels>>;
-
-  using out1 = std::tuple_element_t<3, out_index>;
-  using out2 = std::tuple_element_t<1, collapsed_index>;
-
-  using result = decltype(build_result_tuple<holder2::right_labels, holder2::output_labels, out1, holder2::collapsed_labels, out2>());
-  print_outer(out_index{});
-  print_outer(collapsed_index{});
-}*/
 
 int main() {
   second_test();
-  //third_test();
 }
