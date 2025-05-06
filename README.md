@@ -89,11 +89,9 @@ Matrix transpose can be elegantly expressed using einsum by swapping the indices
 
 ```cpp 
 std::vector A{1, 2, 3, 4}; 
-std::vector B{}; 
-std::mdspan<int, std::extents<size_t, 0>> mdA{B. data()}; 
-std::mdspan<int, std::extents<size_t, 2, 2>> mdB{A. data()};
+std::mdspan<int, std::extents<size_t, 2, 2>> mdA{A. data()};
 // Empty first operand, second operand with "ij", result with swapped indices "ji" 
-auto a = einsum("", "ij", "ji", mdA, mdB); 
+auto a = seinsum("ij", "ji", mdA); 
 a.eval(); 
 auto result = a.get_result();
 // Result is the transpose of the input matrix: [1, 3, 2, 4]
