@@ -203,3 +203,52 @@ TEST(EinsumTest, HadamardProduct2) {
     }
   }
 }
+
+TEST(EinsumTest, MatrixTranspose) {
+  std::vector A{1, 2, 3, 4};
+  std::vector<int> B{};
+  std::mdspan<int, std::extents<size_t, 0>> mdA{B.data()};
+  std::mdspan<int, std::extents<size_t, 2, 2>> mdB{A.data()};
+
+  auto a  = einsum("", "ij","ji", mdA, mdB);
+  a.eval();
+  auto res = a.get_result();
+
+  std::vector res_calc{1,3,2,4};
+  std::mdspan<int, std::extents<size_t, 2, 2>> mdmatres{res_calc.data()};
+  for (auto i = 0; i < 2; i++) {
+    for (auto j = 0; j < 2; j++) {
+      auto r = res[i,j];
+      auto l = mdmatres[i,j];
+      ASSERT_EQ(l,r);
+    }
+  }
+}
+
+TEST(EinsumTest, ElementWiseSquaring) {
+  auto ein = einsum("ij", "ij", "ij", mdmat2, mdmat2);
+  ein.eval();
+  auto res = ein.get_result();
+  for (auto i = 0; i < 4; i++) {
+    for (auto j = 0; j < 4; j++) {
+      std::cout << res[i,j] << ", ";
+    }
+    std::cout << "\n";
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

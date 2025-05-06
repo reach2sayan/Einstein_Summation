@@ -52,14 +52,7 @@ void third_test() {
 }
 
 void fourth_test() {
-  std::vector A{1, 2, 3, 4};
-  std::vector<int> B{};
-  std::mdspan<int, std::extents<size_t, 0>> mdA{B.data()};
-  std::mdspan<int, std::extents<size_t, 2, 2>> mdB{A.data()};
 
-  auto a  = einsum("", "ij","ji", mdA, mdB);
-  a.eval();
-  auto res = a.get_result();
   for (auto i = 0; i < 2; ++i) {
     for (auto j = 0; j < 2; ++j) {
       std::cout << res[i,j] << ", ";

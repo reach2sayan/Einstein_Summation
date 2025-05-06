@@ -114,8 +114,6 @@ public:
     });
   }
 
-  // assign_noleft(result_span, matrices.second, TupleLike{},
-  // TupleLike{},TupleLike{})
   template <typename MatRes, typename Mat, typename OutIndex,
             typename RightIndex>
   constexpr void assign_noleft(MatRes &matres, Mat &matr, const OutIndex &out,
@@ -135,7 +133,7 @@ public:
         decltype(build_result_tuple<right_labels, output_labels, OutTupleIndex,
                                     collapsed_labels, CollapsedTupleIndex>())>;
     assign_noleft(result_span, matrices.second, OutTupleIndex{}, ridx{});
-  };
+  }
 
   template <typename CollapsedTupleIndex, typename OutTupleIndex>
   auto apply_single(CollapsedTupleIndex, OutTupleIndex) {
@@ -147,7 +145,7 @@ public:
                                     collapsed_labels, CollapsedTupleIndex>())>;
     assign(result_span, matrices.first, matrices.second, OutTupleIndex{},
            lidx{}, ridx{});
-  };
+  }
 
   template <std::size_t... Dims>
   constexpr static auto

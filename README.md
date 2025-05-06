@@ -83,6 +83,38 @@ auto result = einsum("bhwi", "bhwj", "bij", mdA, mdB);
 result.eval();
 ```
 
+### Matrix Transpose
+
+Matrix transpose can be elegantly expressed using einsum by swapping the indices in the output:
+
+```cpp 
+std::vector A{1, 2, 3, 4}; 
+std::vector B{}; 
+std::mdspan<int, std::extents<size_t, 0>> mdA{B. data()}; 
+std::mdspan<int, std::extents<size_t, 2, 2>> mdB{A. data()};
+// Empty first operand, second operand with "ij", result with swapped indices "ji" 
+auto a = einsum("", "ij", "ji", mdA, mdB); 
+a.eval(); 
+auto result = a.get_result();
+// Result is the transpose of the input matrix: [1, 3, 2, 4]
+```
+
+
+### Element-wise Squaring
+
+Einsum can also be used for element-wise operations on a single tensor by using it twice with identical indices:
+
+```cpp 
+std::vector mat{1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4}; 
+std::mdspan<int, std::extents<size_t, 4, 4>> mdmat{mat.data()};
+// Element-wise squaring using the same tensor twice 
+auto ein = einsum("ij", "ij", "ij", mdmat, mdmat); 
+ein.eval(); 
+auto result = ein.get_result();
+// Result contains squared values: [1, 1, 1, 1, 4, 4, 4, 4, 9, 9, 9, 9, 16, 16, 16, 16]
+```
+
+
 ### Automatic Result Shape Inference
 
 If you omit the result labels, the library will automatically determine the appropriate result shape:
