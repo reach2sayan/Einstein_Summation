@@ -30,8 +30,9 @@ void second_test() {
   std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdB2{B2.data()};
   // bhwi,bhwj->bij
   auto a2 = einsum("bhwi","bhwj","bij",mdA2, mdB2);
+  auto a3 = auto_einsum("bhwi","bhwj",mdA2, mdB2);
   a2.eval();
-
+  a3.eval();
   //auto md = make_md
 }
 

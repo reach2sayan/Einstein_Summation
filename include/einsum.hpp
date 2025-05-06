@@ -235,7 +235,17 @@ template <typename MDSpan> constexpr auto make_matrix_from_mdspan() {
   constexpr std::size_t rank = MDSpan::extents_type::rank();
   return make_matrix_from_mdspan<MDSpan>(std::make_index_sequence<rank>{});
 }
+template <typename Label>
+struct to_fixed_string;
 
+template <char... Cs>
+struct to_fixed_string<Labels<Cs...>> {
+  static constexpr fixed_string<sizeof...(Cs)> value = fixed_string<sizeof...(Cs)>{
+    std::integer_sequence<char, Cs...>{}};
+};
+
+template <typename Label>
+constexpr auto to_fixed_string_v = to_fixed_string<Label>::value;
 template <fixed_string fsl, fixed_string fsr, fixed_string fsres,
           typename MDSpanA, typename MDSpanB>
 constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
@@ -244,12 +254,24 @@ constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
   using MatB = decltype(make_matrix_from_mdspan<MDSpanB>());
   using LabelA = label_t<fsl>;
   using LabelB = label_t<fsr>;
-  using LabelR = label_t<fsres>;
-  return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
-                                                       fsres};
+  if constexpr (fsres.size() == 0) {
+    using LabelR = EinsumTraits::filter_unique_t<typename EinsumTraits::union_of<LabelA, LabelB>::type>;
+    auto fre = to_fixed_string_v<LabelR>;
+    return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
+                                                         fre};
+  }
+  else {
+    using LabelR = label_t<fsres>;
+    return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
+                                                         fsres};
+  }
 }
 
 #define einsum(left, right, result, A, B)                                      \
   Einsum::make_einsum_impl<left, right, result>(A, B)
+
+#define auto_einsum(left, right, A, B)                                      \
+Einsum::make_einsum_impl<left, right, "">(A, B)
+
 
 } // namespace Einsum
