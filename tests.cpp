@@ -191,8 +191,6 @@ TEST(EinsumTest, HadamardProduct2) {
   std::mdspan<int, std::extents<size_t, 2, 2>> mdA{A.data()};
   std::mdspan<int, std::extents<size_t, 2, 2>> mdB{B.data()};
   std::mdspan<int, std::extents<size_t, 2, 2>> mdmatres{res_calc.data()};
-  // Perform element-wise multiplication (Hadamard product)
-  // "ij,ij->ij" represents element-wise multiplication in Einstein notation
   auto ein = einsum("ij", "ij", "ij", mdA, mdB);
   ein.eval();
   auto result = ein.get_result();

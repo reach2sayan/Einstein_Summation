@@ -40,6 +40,12 @@ template <typename... LabeledDimensions> struct LabeledExtents {
 
 template <typename Dims, typename Labels> struct MatrixLabelCombinator;
 
+template<>
+struct MatrixLabelCombinator<std::index_sequence<0>, Labels<>> {
+  using dims = std::tuple<>;
+  using type = LabeledExtents<>;
+};
+
 template <std::size_t... Dims, char... Cs>
 struct MatrixLabelCombinator<std::index_sequence<Dims...>, Labels<Cs...>> {
   static_assert(sizeof...(Dims) == sizeof...(Cs),
@@ -53,6 +59,13 @@ using matrix_with_labeled_dims_t =
     MatrixLabelCombinator<typename TMatrix::seq, TLabel>::type;
 
 template <typename Tuple> struct array_of;
+
+template<>
+struct array_of<std::tuple<>> {
+  constexpr static std::array<std::pair<char, std::size_t>, 0>
+      value = {};
+};
+
 template <typename Head, typename... Tail>
 struct array_of<std::tuple<Head, Tail...>> {
   constexpr static std::array<std::pair<char, std::size_t>, sizeof...(Tail) + 1>

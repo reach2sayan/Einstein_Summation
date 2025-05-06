@@ -97,19 +97,32 @@ public:
   constexpr static std::size_t result_size = tuple_dim_product<output_labels>();
   constexpr auto print_eval();
 
-  template <typename MatRes, typename MatL, typename MatR, typename A,
-            typename B1, typename C1>
-  constexpr void assign(MatRes &matres, MatL &matl, MatR &matr, const A &a,
-                        const B1 &b1, const C1 &c1) {
-    for_each_index(a, [&](auto... ai) {
-      for_each_index(b1, [&](auto... bi) {
-        for_each_index(c1, [&](auto... ci) {
-          auto mat_l = matl[bi...];
-          auto mat_r = matr[ci...];
+  template <typename MatRes, typename MatL, typename MatR, typename OutIndex,
+            typename LeftIndex, typename RightIndex>
+  constexpr void assign(MatRes &matres, MatL &matl, MatR &matr, const OutIndex &outidx,
+                        const LeftIndex &leftidx, const RightIndex &rightidx) {
+    for_each_index(outidx, [&](auto... outi) {
+      for_each_index(leftidx, [&](auto... li) {
+        for_each_index(rightidx, [&](auto... ri) {
+          auto mat_l = matl[li...];
+          auto mat_r = matr[ri...];
           auto sum = mat_l * mat_r;
-          matres[ai...] += sum;
+          matres[outi...] += sum;
         });
       });
+    });
+  }
+
+  //assign_noleft(result_span, matrices.second, TupleLike{}, TupleLike{},TupleLike{})
+  template <typename MatRes, typename Mat, typename OutIndex, typename RightIndex>
+  constexpr void assign_noleft(MatRes &matres, Mat &matr, const OutIndex &out,
+                        const RightIndex &rightidx) {
+    for_each_index(out, [&](auto... outi) {
+        for_each_index(rightidx, [&](auto... ri) {
+          auto mat_r = matr[ri...];
+          auto sum = mat_r;
+          matres[outi...] += sum;
+        });
     });
   }
 
@@ -217,11 +230,24 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
   auto collapsing_loop = [&]<typename TupleLike>(TupleLike) {
     std::apply(
         [&](auto &&...args_inner) {
-          if constexpr (sizeof...(args_inner) != 0) {
+          if constexpr (sizeof...(args_inner) != 0 && std::tuple_size_v<left_labels> != 0) {
             (apply_single(args_inner, TupleLike{}), ...);
-          } else {
+          } else if constexpr (sizeof...(args_inner) == 0 && std::tuple_size_v<left_labels> != 0) {
+            using ridx = flatten_tuple_t<
+                decltype(build_result_tuple<typename self::right_labels,
+                                            typename self::output_labels, TupleLike,
+                                            typename self::collapsed_labels, std::tuple<>>())>;
+            using lidx = flatten_tuple_t<
+                decltype(build_result_tuple<typename self::left_labels,
+                                            typename self::output_labels, TupleLike,
+                                            typename self::collapsed_labels, std::tuple<>>())>;
             assign(result_span, matrices.first, matrices.second, TupleLike{},
-                   TupleLike{}, TupleLike{});
+                   lidx{}, ridx{});
+          } else if constexpr (sizeof...(args_inner) != 0 && std::tuple_size_v<left_labels> == 0) {
+            (apply_single_noleft(args_inner, TupleLike{}), ...);
+          } else {
+            static_assert(sizeof...(args_inner) == 0 && std::tuple_size_v<left_labels> == 0);
+            assign_noleft(result_span, matrices.second, TupleLike{},TupleLike{});
           }
         },
         typename self::collapsed_index{});
