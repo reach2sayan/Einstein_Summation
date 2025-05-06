@@ -51,42 +51,13 @@ void third_test() {
   }
 }
 
-using namespace EinsumTraits;
 void fourth_test() {
-  using matA = Matrix<int,0>;
-  using matB = Matrix<int,2,2>;
-  using LabelA = Einsum::label_t<"">;
-  using LabelB = Einsum::label_t<"ij">;
-  using LabelR = Einsum::label_t<"ji">;
   std::vector A{1, 2, 3, 4};
   std::vector<int> B{};
   std::mdspan<int, std::extents<size_t, 0>> mdA{B.data()};
   std::mdspan<int, std::extents<size_t, 2, 2>> mdB{A.data()};
 
-  using holder = Einsum::Einsum<int, matA, MatB, LabelA, LabelB, LabelR>;
-  holder::left_labels ll{};
-  holder::right_labels rl{};
-  holder::collapsed_labels cl{};
-  holder::output_labels ol{};
-
-  holder::out_index oi{};
-  holder::collapsed_index ci{};
-
-  using fres = std::tuple_element_t<0, holder::out_index>;
-  //using fcol = std::tuple_element_t<0, holder::collapsed_index>;
-
-  using ridx = flatten_tuple_t<
-        decltype(build_result_tuple<typename holder::right_labels,
-                                    typename holder::output_labels, fres,
-                                    typename holder::collapsed_labels,
-                                    std::tuple<>>())>;
-
-
-
-
-
-
-  Einsum::Einsum<int, matA, MatB, LabelA, LabelB, LabelR> a{mdA, mdB, "", "ij","ji"};
+  auto a  = einsum("", "ij","ji", mdA, mdB);
   a.eval();
   auto res = a.get_result();
   for (auto i = 0; i < 2; ++i) {
@@ -98,7 +69,7 @@ void fourth_test() {
 }
 
 int main() {
-  //second_test();
-  //third_test();
+  second_test();
+  third_test();
   fourth_test();
 }
