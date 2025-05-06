@@ -123,26 +123,3 @@ If you omit the result labels, the library will automatically determine the appr
 auto result = auto_einsum("bhwi", "bhwj", mdA, mdB);
 result.eval();
 ```
-
-## Implementation Details
-
-The library uses extensive template metaprogramming to analyze tensor dimensions and labels at compile time:
-
-- handles compile-time string operations `fixed_string`
-- namespace contains metaprogramming utilities for tensor operations `EinsumTraits`
-- Compile-time validity checks ensure tensor dimensions match their indices
-- Cartesian product of dimensions is calculated at compile time for efficient execution
-
-## Examples
-
-### Vector-Matrix Multiplication
-
-``` cpp
-std::vector A{0, 1, 2};
-std::vector B{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-std::mdspan<int, std::extents<size_t, 3>> mdA{A.data()};
-std::mdspan<int, std::extents<size_t, 3, 4>> mdB{B.data()};
-
-auto result = einsum("i", "ij", "i", mdA, mdB);
-result.eval();
-```
