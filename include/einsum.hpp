@@ -208,7 +208,6 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
                                     typename self::output_labels, OutTupleIndex,
                                     typename self::collapsed_labels,
                                     CollapsedTupleIndex>())>;
-
     assign(result_span, matrices.first, matrices.second, OutTupleIndex{},
            lidx{}, ridx{});
   };
@@ -217,12 +216,22 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
   auto collapsing_loop = [=]<typename TupleLike>(TupleLike) {
     std::apply(
         [=](auto &&...args_inner) {
-          (apply_single(args_inner, TupleLike{}), ...);
+          if constexpr (sizeof...(args_inner) != 0) {
+            (apply_single(args_inner, TupleLike{}), ...);
+          } else {
+            assign(result_span, matrices.first, matrices.second, TupleLike{},
+                   TupleLike{}, TupleLike{});
+          }
         },
         typename self::collapsed_index{});
   };
 
-  auto outer_loop = [=](auto &&...args) { (collapsing_loop(args), ...); };
+  auto outer_loop = [=](auto &&...args) {
+    if constexpr (sizeof...(args) != 0)
+      (collapsing_loop(args), ...);
+    else
+      std::cout << "boo";
+  };
   std::apply(outer_loop, typename self::out_index{});
 }
 
@@ -237,13 +246,11 @@ template <typename MDSpan> constexpr auto make_matrix_from_mdspan() {
   constexpr std::size_t rank = MDSpan::extents_type::rank();
   return make_matrix_from_mdspan<MDSpan>(std::make_index_sequence<rank>{});
 }
-template <typename Label>
-struct to_fixed_string;
+template <typename Label> struct to_fixed_string;
 
-template <char... Cs>
-struct to_fixed_string<Labels<Cs...>> {
-  static constexpr fixed_string<sizeof...(Cs)> value = fixed_string<sizeof...(Cs)>{
-    std::integer_sequence<char, Cs...>{}};
+template <char... Cs> struct to_fixed_string<Labels<Cs...>> {
+  static constexpr fixed_string<sizeof...(Cs)> value =
+      fixed_string<sizeof...(Cs)>{std::integer_sequence<char, Cs...>{}};
 };
 
 template <typename Label>
@@ -257,12 +264,12 @@ constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
   using LabelA = label_t<fsl>;
   using LabelB = label_t<fsr>;
   if constexpr (fsres.size() == 0) {
-    using LabelR = EinsumTraits::filter_unique_t<typename EinsumTraits::union_of<LabelA, LabelB>::type>;
+    using LabelR = EinsumTraits::filter_unique_t<
+        typename EinsumTraits::union_of<LabelA, LabelB>::type>;
     auto fre = to_fixed_string_v<LabelR>;
     return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
                                                          fre};
-  }
-  else {
+  } else {
     using LabelR = label_t<fsres>;
     return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
                                                          fsres};
@@ -272,8 +279,7 @@ constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
 #define einsum(left, right, result, A, B)                                      \
   Einsum::make_einsum_impl<left, right, result>(A, B)
 
-#define auto_einsum(left, right, A, B)                                      \
-Einsum::make_einsum_impl<left, right, "">(A, B)
-
+#define auto_einsum(left, right, A, B)                                         \
+  Einsum::make_einsum_impl<left, right, "">(A, B)
 
 } // namespace Einsum

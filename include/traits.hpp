@@ -149,6 +149,10 @@ struct prepend_all<T, std::tuple<Tuples...>> {
 
 template <typename... Seqs> struct cartesian_product;
 
+template <> struct cartesian_product<> {
+  using type = std::tuple<>;
+};
+
 template <std::size_t... Is>
 struct cartesian_product<std::index_sequence<Is...>> {
   using type =
