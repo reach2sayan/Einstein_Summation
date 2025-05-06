@@ -171,7 +171,7 @@ TEST(EinsumTest, HadamardProduct) {
   auto ein = einsum("ij", "ij", "ij", mdmat1, mdmat2);
   ein.eval();
   auto res = ein.get_result();
-  std::vector res_calc{11,12,13,14,42,44,46,48,93,96,99,172,164,168,172,176};
+  std::vector res_calc{11,12,13,14,42,44,46,48,93,96,99,102,164,168,172,176};
   std::mdspan<int, std::extents<size_t, 4, 4>> mdmatres{res_calc.data()};
   for (auto i = 0; i < 4; i++) {
     for (auto j = 0; j < 4; j++) {
