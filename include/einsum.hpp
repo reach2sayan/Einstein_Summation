@@ -247,7 +247,12 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
             (apply_single_noleft(args_inner, TupleLike{}), ...);
           } else {
             static_assert(sizeof...(args_inner) == 0 && std::tuple_size_v<left_labels> == 0);
-            assign_noleft(result_span, matrices.second, TupleLike{},TupleLike{});
+            using ridx = flatten_tuple_t<
+                decltype(build_result_tuple<
+                         typename self::right_labels,
+                         typename self::output_labels, TupleLike,
+                         typename self::collapsed_labels, std::tuple<>>())>;
+            assign_noleft(result_span, matrices.second, TupleLike{},ridx{});
           }
         },
         typename self::collapsed_index{});
