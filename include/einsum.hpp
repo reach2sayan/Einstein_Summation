@@ -316,6 +316,14 @@ constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
   }
 }
 
+#define seinsum(right, result, B)                                              \
+  [&]() {                                                                      \
+    using TT = decltype(B)::element_type;                                      \
+    std::vector<TT> empty{};                                                   \
+    std::mdspan<TT, std::extents<size_t, 0>> mdempty{empty.data()};            \
+    return Einsum::make_einsum_impl<"", right, result>(mdempty, B);            \
+  }()
+
 #define einsum(left, right, result, A, B)                                      \
   Einsum::make_einsum_impl<left, right, result>(A, B)
 

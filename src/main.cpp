@@ -39,4 +39,14 @@ void third_test() {
 int main() {
   second_test();
   third_test();
+  std::vector A{1, 2, 3, 4};
+  std::vector<int> B{};
+  std::mdspan<int, std::extents<size_t, 0>> mdA{B.data()};
+  std::mdspan<int, std::extents<size_t, 2, 2>> mdB{A.data()};
+
+  //auto a  = einsum("", "ij","ji", mdA, mdB);
+  auto ein = seinsum("ij","ji", mdB);
+  ein.eval();
+  auto res = ein.get_result();
+  print_2dmd_span(std::cout, res);
 }

@@ -211,6 +211,7 @@ TEST(EinsumTest, MatrixTranspose) {
   std::mdspan<int, std::extents<size_t, 2, 2>> mdB{A.data()};
 
   auto a  = einsum("", "ij","ji", mdA, mdB);
+  auto ein = seinsum("ij","ji",mdB);
   a.eval();
   auto res = a.get_result();
 
