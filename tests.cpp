@@ -107,6 +107,23 @@ TEST(EinsumTest, MatrixResultTypeCheck1) {
                                         std::integral_constant<size_t, 3>>>);
 }
 
+TEST(EinsmTest, LinearMatrix) {
+  fixed_string<1> fl{"i"};
+  fixed_string<2> fr{"ij"};
+  fixed_string<1> fres{"i"};
+  std::vector A{0, 1, 2};
+  std::vector B{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+  std::mdspan<int, std::extents<size_t, 3>> mdA{A.data()};
+  std::mdspan<int, std::extents<size_t, 3, 4>> mdB{B.data()};
+  auto a = einsum("i", "ij", "i", mdA, mdB);
+  a.eval();
+  auto res = a.get_result();
+  std::array res_test{0, 22, 76};
+  for (auto i = 0; i < 3; ++i) {
+    ASSERT_EQ(res[i], res_test[i]);
+  }
+}
+
 TEST(EinsumTest, MatrixResultTypeCheck2) {
 
   std::vector<int> L(6 * 6);
