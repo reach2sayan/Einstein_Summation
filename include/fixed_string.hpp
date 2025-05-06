@@ -11,17 +11,18 @@ template <std::size_t N> struct fixed_string {
     for (std::size_t i = 0; i < N; ++i)
       data[i] = str[i];
   }
+  template <char... Cs>
+  constexpr fixed_string(std::integer_sequence<char, Cs...>) : data{Cs...} {}
   constexpr char operator[](std::size_t i) const { return data[i]; }
   constexpr std::size_t size() const { return N; }
 };
 
-template<std::size_t N>
-fixed_string(const char (&str)[N]) -> fixed_string<N-1>;
+template <std::size_t N>
+fixed_string(const char (&str)[N]) -> fixed_string<N - 1>;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
-template <typename CharT, CharT... Cs>
-constexpr auto operator""_fs() {
+template <typename CharT, CharT... Cs> constexpr auto operator""_fs() {
   constexpr char str[] = {Cs...};
   return fixed_string<sizeof...(Cs)>{str};
 }
