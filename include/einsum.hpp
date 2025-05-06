@@ -129,6 +129,8 @@ public:
         result_span{make_mdspan(result_matrix, extract_dims<output_labels>())} {
   }
 
+  ~Einsum() { delete[] result_matrix; }
+
   constexpr auto eval();
   auto get_result() const { return result_span; }
 
