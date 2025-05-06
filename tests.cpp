@@ -81,7 +81,7 @@ TEST(EinsumTest, 2DMatrix2) {
     }
   }
 }
-
+#ifndef NDEBUG
 TEST(EinsumTest, MatrixResultTypeCheck1) {
   using MatA = EinsumTraits::Matrix<int, 6, 2, 3>;
   using MatB = EinsumTraits::Matrix<int, 6, 3, 4>;
@@ -114,6 +114,7 @@ TEST(EinsumTest, MatrixResultTypeCheck1) {
                                         std::integral_constant<size_t, 1>,
                                         std::integral_constant<size_t, 3>>>);
 }
+#endif
 
 TEST(EinsmTest, LinearMatrix) {
   fixed_string<1> fl{"i"};
@@ -169,7 +170,6 @@ TEST(EinsumTest, MatrixMul) {
 TEST(EinsumTest, HadamardProduct) {
   auto ein = einsum("ij", "ij", "ij", mdmat1, mdmat2);
   ein.eval();
-  ein.print_eval();
   auto res = ein.get_result();
   std::vector res_calc{11,12,13,14,42,44,46,48,93,96,99,172,164,168,172,176};
   std::mdspan<int, std::extents<size_t, 4, 4>> mdmatres{res_calc.data()};
@@ -177,9 +177,7 @@ TEST(EinsumTest, HadamardProduct) {
     for (auto j = 0; j < 4; j++) {
       auto l = res[i,j];
       auto r = mdmatres[i,j];
-      std::cout << l << ", ";
-      //ASSERT_EQ(l,r);
+      ASSERT_EQ(l,r);
     }
-    std::cout << "\n";
   }
 }

@@ -152,7 +152,7 @@ template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
 constexpr auto
 Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
        Labels<CsB...>, Labels<CsRes...>>::print_eval() {
-
+#ifndef NDEBUG
   using self = typename std::decay_t<decltype(*this)>;
   auto apply_single = [=]<typename CollapsedTupleIndex, typename OutTupleIndex>(
                           CollapsedTupleIndex, OutTupleIndex) {
@@ -187,6 +187,7 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
 
   auto outer_loop = [=](auto &&...args) { (collapsing_loop(args), ...); };
   std::apply(outer_loop, typename self::out_index{});
+#endif
 }
 template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
           char... CsB, char... CsRes>
@@ -213,9 +214,9 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
   };
 
   // inner loop
-  auto collapsing_loop = [=]<typename TupleLike>(TupleLike) {
+  auto collapsing_loop = [&]<typename TupleLike>(TupleLike) {
     std::apply(
-        [=](auto &&...args_inner) {
+        [&](auto &&...args_inner) {
           if constexpr (sizeof...(args_inner) != 0) {
             (apply_single(args_inner, TupleLike{}), ...);
           } else {
@@ -226,11 +227,9 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
         typename self::collapsed_index{});
   };
 
-  auto outer_loop = [=](auto &&...args) {
+  auto outer_loop = [&](auto &&...args) {
     if constexpr (sizeof...(args) != 0)
       (collapsing_loop(args), ...);
-    else
-      std::cout << "boo";
   };
   std::apply(outer_loop, typename self::out_index{});
 }
