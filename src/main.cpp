@@ -88,7 +88,6 @@ void fourth_test() {
 
   Einsum::Einsum<int, matA, MatB, LabelA, LabelB, LabelR> a{mdA, mdB, "", "ij","ji"};
   a.eval();
-  a.print_eval();
   auto res = a.get_result();
   for (auto i = 0; i < 2; ++i) {
     for (auto j = 0; j < 2; ++j) {
