@@ -1,7 +1,9 @@
 ﻿cmake_minimum_required(VERSION 3.8)
 project("Einstein_Summation")
 
-set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 if (MSVC)
     if (POLICY CMP0141)
         cmake_policy(SET CMP0141 NEW)
@@ -13,8 +15,17 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 else ()
-    add_compile_options(-Wall -Wpedantic -Wfatal-errors)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        add_compile_options(-Wall -Wextra -pedantic)
+        # For using std::mdspan with Clang
+        add_compile_options(-stdlib=libc++)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        add_compile_options(-Wall -Wextra -pedantic)
+    endif()
 endif ()
+
+
+
 
 include(FetchContent)
 FetchContent_Declare(
