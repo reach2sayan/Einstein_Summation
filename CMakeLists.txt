@@ -24,9 +24,6 @@ else ()
     endif()
 endif ()
 
-
-
-
 include(FetchContent)
 FetchContent_Declare(
         googletest
@@ -41,6 +38,14 @@ FetchContent_Declare(
         GIT_TAG stable
 )
 FetchContent_MakeAvailable(mdspan)
+
+include(FetchContent)
+FetchContent_Declare(
+        benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG        v1.9.1 # Replace with the desired version
+)
+FetchContent_MakeAvailable(benchmark)
 
 add_library(einsum INTERFACE
         ${CMAKE_SOURCE_DIR}/include/fixed_string.hpp
@@ -57,7 +62,7 @@ target_include_directories(main PRIVATE
 )
 
 add_executable(tests tests.cpp)
-target_link_libraries(tests PUBLIC gtest_main einsum)
+target_link_libraries(tests PUBLIC gtest_main einsum benchmark::benchmark)
 target_include_directories(tests PRIVATE
         ${CMAKE_SOURCE_DIR}/include
         ${mdspan_SOURCE_DIR}/include
