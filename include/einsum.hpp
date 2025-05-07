@@ -24,8 +24,8 @@ template <fixed_string fs> constexpr auto make_labels() {
 template <fixed_string fs> using label_t = decltype(make_labels<fs>());
 
 template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
-  for (auto &&lmap : EinsumTraits::array_of<TupleA>::value) {
-    for (auto &&rmap : EinsumTraits::array_of<TupleB>::value) {
+  for (auto &&lmap : EinsumTraits::array_of(TupleA{})/*<TupleA>::value*/) {
+    for (auto &&rmap : EinsumTraits::array_of(TupleB{})/*<TupleB>::value*/) {
       if (lmap.first == rmap.first && lmap.second != rmap.second)
         return false;
     }

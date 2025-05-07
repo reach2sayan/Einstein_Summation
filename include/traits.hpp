@@ -40,8 +40,7 @@ template <typename... LabeledDimensions> struct LabeledExtents {
 
 template <typename Dims, typename Labels> struct MatrixLabelCombinator;
 
-template<>
-struct MatrixLabelCombinator<std::index_sequence<0>, Labels<>> {
+template <> struct MatrixLabelCombinator<std::index_sequence<0>, Labels<>> {
   using dims = std::tuple<>;
   using type = LabeledExtents<>;
 };
@@ -58,20 +57,15 @@ template <typename TMatrix, typename TLabel>
 using matrix_with_labeled_dims_t =
     MatrixLabelCombinator<typename TMatrix::seq, TLabel>::type;
 
-template <typename Tuple> struct array_of;
-
-template<>
-struct array_of<std::tuple<>> {
-  constexpr static std::array<std::pair<char, std::size_t>, 0>
-      value = {};
-};
+consteval auto array_of(std::tuple<>) {
+  return std::array<std::pair<char, std::size_t>, 0>{};
+}
 
 template <typename Head, typename... Tail>
-struct array_of<std::tuple<Head, Tail...>> {
-  constexpr static std::array<std::pair<char, std::size_t>, sizeof...(Tail) + 1>
-      value = {std::make_pair(Head::label, Head::dim),
-               std::make_pair(Tail::label, Tail::dim)...};
-};
+consteval auto array_of(std::tuple<Head, Tail...>) {
+  return std::array{std::make_pair(Head::label, Head::dim),
+                    std::make_pair(Tail::label, Tail::dim)...};
+}
 
 template <char C, char... Cs>
 struct contains : std::bool_constant<((C == Cs) || ...)> {};
@@ -80,6 +74,8 @@ template <typename A, typename B> struct concat;
 template <char... As, char... Bs> struct concat<Labels<As...>, Labels<Bs...>> {
   using type = Labels<As..., Bs...>;
 };
+
+
 
 template <template <char> class Pred, typename Pack> struct filter;
 template <template <char> class Pred, char... Cs>
@@ -145,13 +141,18 @@ template <typename A, typename B, typename Res> struct collapsed_dimensions {
   using diff = typename difference<unionAB, Res>::type;
   using type = typename unique<diff>::type;
 };
-
+/*
 template <typename Tuple> struct make_iota_tuple;
 template <typename... Ts> struct make_iota_tuple<std::tuple<Ts...>> {
   using type = std::tuple<std::make_index_sequence<Ts::dim>...>;
-};
+};*/
 
-template <typename... Ts> using tuple_iota_t = make_iota_tuple<Ts...>::type;
+template <typename... Ts>
+auto make_iota_tuple_fn(std::tuple<Ts...>)
+    -> std::tuple<std::make_index_sequence<Ts::dim>...>;
+
+template <typename Tuple>
+using tuple_iota_t = decltype(make_iota_tuple_fn(std::declval<Tuple>()));
 
 template <typename T, typename Tuple> struct prepend_all;
 
@@ -229,7 +230,6 @@ template <typename T> struct flatten_tuple {
   using type = std::tuple<T>;
 };
 
-
 template <typename... Ts> struct flatten_tuple<std::tuple<Ts...>> {
   using type = decltype(std::tuple_cat(
       std::declval<typename flatten_tuple<Ts>::type>()...));
@@ -237,8 +237,9 @@ template <typename... Ts> struct flatten_tuple<std::tuple<Ts...>> {
 
 template <typename T> using flatten_tuple_t = typename flatten_tuple<T>::type;
 
-template<typename... Ts>
-std::tuple<flatten_tuple_t<Ts>...> constexpr map_flatten_tuple(std::tuple<Ts...>);
+template <typename... Ts>
+auto constexpr map_flatten_tuple(std::tuple<Ts...>)
+    -> std::tuple<flatten_tuple_t<Ts>...>;
 
 template <typename T>
 using map_flatten_tuple_t = decltype(map_flatten_tuple(std::declval<T>()));
