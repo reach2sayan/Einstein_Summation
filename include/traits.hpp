@@ -193,28 +193,27 @@ template <typename Tuple>
 using cartesian_from_labeled_dims_t =
     typename cartesian_from_labeled_dims<Tuple>::type;
 
-template <char Label, typename Tuple> struct find_by_label;
-
-//template <char Label> void find_by_label(std::tuple<>);
-
-template <char Label> struct find_by_label<Label, std::tuple<>> {
-  using type = void;
-};
+template <char Label> void find_by_label(std::tuple<>);
 
 template <char Label, std::size_t Dim, char L, typename... Rest>
-struct find_by_label<Label, std::tuple<LabeledDimension<Dim, L>, Rest...>> {
-  using type = std::conditional_t<
-      Label == L, LabeledDimension<Dim, L>,
-      typename find_by_label<Label, std::tuple<Rest...>>::type>;
-};
+consteval auto find_by_label(std::tuple<LabeledDimension<Dim, L>, Rest...>) {
+  if constexpr (Label == L) {
+    return LabeledDimension<Dim, L>{};
+  }
+  else {
+    return find_by_label<Label>(std::tuple<Rest...>{});
+  }
+}
 
 template <typename Labels, typename LabeledTuple>
 struct extract_labeled_dimensions;
 
 template <char... Cs, typename LabeledTuple>
 struct extract_labeled_dimensions<Labels<Cs...>, LabeledTuple> {
+  template<char C>
+  using ld = decltype(find_by_label<C>(std::declval<LabeledTuple>()));
   using type = std::tuple<
-      LabeledDimension<find_by_label<Cs, LabeledTuple>::type::dim, Cs>...>;
+      LabeledDimension<ld<Cs>::dim, Cs>...>;
 };
 
 template <typename Labels, typename LabeledTuple>
