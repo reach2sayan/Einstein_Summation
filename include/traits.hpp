@@ -75,8 +75,6 @@ template <char... As, char... Bs> struct concat<Labels<As...>, Labels<Bs...>> {
   using type = Labels<As..., Bs...>;
 };
 
-
-
 template <template <char> class Pred, typename Pack> struct filter;
 template <template <char> class Pred, char... Cs>
 struct filter<Pred, Labels<Cs...>> {
@@ -141,18 +139,13 @@ template <typename A, typename B, typename Res> struct collapsed_dimensions {
   using diff = typename difference<unionAB, Res>::type;
   using type = typename unique<diff>::type;
 };
-/*
-template <typename Tuple> struct make_iota_tuple;
-template <typename... Ts> struct make_iota_tuple<std::tuple<Ts...>> {
-  using type = std::tuple<std::make_index_sequence<Ts::dim>...>;
-};*/
 
 template <typename... Ts>
-auto make_iota_tuple_fn(std::tuple<Ts...>)
+consteval auto make_iota_tuple_impl(std::tuple<Ts...>)
     -> std::tuple<std::make_index_sequence<Ts::dim>...>;
 
 template <typename Tuple>
-using tuple_iota_t = decltype(make_iota_tuple_fn(std::declval<Tuple>()));
+using tuple_iota_t = decltype(make_iota_tuple_impl(std::declval<Tuple>()));
 
 template <typename T, typename Tuple> struct prepend_all;
 
@@ -201,6 +194,8 @@ using cartesian_from_labeled_dims_t =
     typename cartesian_from_labeled_dims<Tuple>::type;
 
 template <char Label, typename Tuple> struct find_by_label;
+
+//template <char Label> void find_by_label(std::tuple<>);
 
 template <char Label> struct find_by_label<Label, std::tuple<>> {
   using type = void;
