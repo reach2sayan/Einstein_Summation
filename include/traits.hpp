@@ -5,6 +5,8 @@
 #pragma once
 
 #include "fixed_string.hpp"
+
+#include <algorithm>
 #include <array>
 #include <ranges>
 #include <tuple>
@@ -258,7 +260,6 @@ consteval auto build_result_tuple_impl(std::index_sequence<Is...>) {
   return std::tuple {
     []<std::size_t I>() {
       constexpr char label = std::tuple_element_t<I, Out>::label;
-
       constexpr std::size_t res_pos = find_index_by_label<label>(Res{});
       if constexpr (res_pos != NOT_FOUND) {
         return std::tuple_element_t<res_pos, ResIdx>{};
@@ -292,7 +293,7 @@ constexpr void for_each_index(const Tuple &t, F &&f) {
   apply_indices(t, std::forward<F>(f), std::make_index_sequence<N>{});
 }
 
-template <typename Tuple> constexpr std::size_t tuple_dim_product() {
+template <typename Tuple> consteval std::size_t tuple_dim_product() {
   auto tuple_dim_product_impl =
       []<std::size_t... Is>(std::index_sequence<Is...>) {
         return (1 * ... * (std::tuple_element_t<Is, Tuple>::dim));
@@ -301,7 +302,7 @@ template <typename Tuple> constexpr std::size_t tuple_dim_product() {
       std::make_index_sequence<std::tuple_size_v<Tuple>>{});
 }
 
-template <typename Tuple> constexpr auto extract_dims() {
+template <typename Tuple> consteval auto extract_dims() {
   auto extract_dims_impl = []<std::size_t... Is>(std::index_sequence<Is...>) {
     return std::integer_sequence<std::size_t,
                                  std::tuple_element_t<Is, Tuple>::dim...>{};
@@ -312,13 +313,15 @@ template <typename Tuple> constexpr auto extract_dims() {
 
 template <char Target, char... Cs>
 constexpr std::size_t count = ((Target == Cs ? 1 : 0) + ...);
-
+/*
 // Append a char to Labels
 template <char C, typename L> struct append;
 
 template <char C, char... Cs> struct append<C, Labels<Cs...>> {
   using type = Labels<Cs..., C>;
-};
+};*/
+template <char C, char... Cs>
+auto append(Labels<Cs...>) -> Labels<Cs..., C>;
 
 template <typename In> struct filter_unique;
 template <char... Cs> struct filter_unique<Labels<Cs...>> {
@@ -326,14 +329,15 @@ private:
   template <typename Accum, char Current, char... Rest> struct helper {
     static constexpr std::size_t n = count<Current, Cs...>;
     using next =
-        std::conditional_t<(n == 1), typename append<Current, Accum>::type,
+        std::conditional_t<(n == 1), decltype(append<Current>(std::declval<Accum>())),
                            Accum>;
     using type = typename helper<next, Rest...>::type;
   };
+
   template <typename Accum, char Current> struct helper<Accum, Current> {
     static constexpr std::size_t n = count<Current, Cs...>;
     using type =
-        std::conditional_t<(n == 1), typename append<Current, Accum>::type,
+        std::conditional_t<(n == 1), decltype(append<Current>(std::declval<Accum>())),
                            Accum>;
   };
 
