@@ -6,6 +6,7 @@
 
 #include "fixed_string.hpp"
 #include <array>
+#include <ranges>
 #include <tuple>
 
 namespace EinsumTraits {
@@ -19,9 +20,7 @@ template <typename T, std::size_t... Dimensions> struct Matrix {
   using seq = std::index_sequence<Dimensions...>;
 };
 
-template <char... Cs> struct Labels {
-  constexpr static std::array<char, sizeof...(Cs)> labels{Cs...};
-};
+template <char... Cs> struct Labels {};
 
 template <std::size_t... Dims> struct Dimensions {
   constexpr static std::array<std::size_t, sizeof...(Dims)> dims{Dims...};
@@ -91,7 +90,6 @@ struct filter<Pred, Labels<Cs...>> {
   template <typename Last> struct concat_all<Last> {
     using type = Last;
   };
-
   using type = typename concat_all<maybe_label<Cs>...>::type;
 };
 
@@ -111,6 +109,11 @@ struct difference<Labels<As...>, Labels<Bs...>> {
 
 template <typename In, typename Seen = Labels<>, typename Out = Labels<>>
 struct unique_impl;
+
+template <char... Cs> auto unique_impl_impl(Labels<Cs...>) {
+  std::array cs{Cs...};
+  std::array<int, sizeof...(Cs)>{};
+}
 
 template <char Head, char... Tail, char... SeenChars, char... OutChars>
 struct unique_impl<Labels<Head, Tail...>, Labels<SeenChars...>,
@@ -199,8 +202,7 @@ template <char Label, std::size_t Dim, char L, typename... Rest>
 consteval auto find_by_label(std::tuple<LabeledDimension<Dim, L>, Rest...>) {
   if constexpr (Label == L) {
     return LabeledDimension<Dim, L>{};
-  }
-  else {
+  } else {
     return find_by_label<Label>(std::tuple<Rest...>{});
   }
 }
@@ -210,10 +212,9 @@ struct extract_labeled_dimensions;
 
 template <char... Cs, typename LabeledTuple>
 struct extract_labeled_dimensions<Labels<Cs...>, LabeledTuple> {
-  template<char C>
+  template <char C>
   using ld = decltype(find_by_label<C>(std::declval<LabeledTuple>()));
-  using type = std::tuple<
-      LabeledDimension<ld<Cs>::dim, Cs>...>;
+  using type = std::tuple<LabeledDimension<ld<Cs>::dim, Cs>...>;
 };
 
 template <typename Labels, typename LabeledTuple>
@@ -240,34 +241,29 @@ using map_flatten_tuple_t = decltype(map_flatten_tuple(std::declval<T>()));
 
 constexpr std::size_t NOT_FOUND = static_cast<std::size_t>(-1);
 
-template <char Label, typename Tuple, std::size_t Index = 0>
-struct find_index_by_label;
-
-template <char Label, typename Head, typename... Tail, std::size_t Index>
-struct find_index_by_label<Label, std::tuple<Head, Tail...>, Index> {
-  static constexpr std::size_t value =
-      (Head::label == Label)
-          ? Index
-          : find_index_by_label<Label, std::tuple<Tail...>, Index + 1>::value;
-};
-
-template <char Label, std::size_t Index>
-struct find_index_by_label<Label, std::tuple<>, Index> {
-  static constexpr std::size_t value = NOT_FOUND;
-};
+template <char Label, typename... Ts>
+consteval std::size_t find_index_by_label(std::tuple<Ts...> &&) {
+  std::array labels{Ts::label...};
+  for (auto &&[index, ld] : std::ranges::enumerate_view(labels)) {
+    if (ld == Label) {
+      return index;
+    }
+  }
+  return NOT_FOUND;
+}
 
 template <typename Out, typename Res, typename ResIdx, typename Col,
           typename ColIdx, std::size_t... Is>
-constexpr auto build_result_tuple_impl(std::index_sequence<Is...>) {
+consteval auto build_result_tuple_impl(std::index_sequence<Is...>) {
   return std::tuple {
     []<std::size_t I>() {
       constexpr char label = std::tuple_element_t<I, Out>::label;
 
-      constexpr std::size_t res_pos = find_index_by_label<label, Res>::value;
+      constexpr std::size_t res_pos = find_index_by_label<label>(Res{});
       if constexpr (res_pos != NOT_FOUND) {
         return std::tuple_element_t<res_pos, ResIdx>{};
       } else {
-        constexpr std::size_t col_pos = find_index_by_label<label, Col>::value;
+        constexpr std::size_t col_pos = find_index_by_label<label>(Col{});
         static_assert(col_pos != NOT_FOUND, "Label not found in Res or Col");
         return std::tuple_element_t<col_pos, ColIdx>{};
       }
@@ -276,23 +272,22 @@ constexpr auto build_result_tuple_impl(std::index_sequence<Is...>) {
 }
 template <typename Out, typename Res, typename ResIdx, typename Col,
           typename ColIdx>
-constexpr auto build_result_tuple() {
+consteval auto build_result_tuple() {
   return build_result_tuple_impl<Out, Res, ResIdx, Col, ColIdx>(
       std::make_index_sequence<std::tuple_size_v<Out>>{});
 }
 
 template <typename Tuple, std::size_t... Is>
-constexpr auto extract_indices(const Tuple &, std::index_sequence<Is...>) {
+consteval auto extract_indices(const Tuple &, std::index_sequence<Is...>) {
   return std::index_sequence<std::tuple_element_t<Is, Tuple>::value...>{};
-}
-
-template <typename Tuple, typename F, std::size_t... Is>
-constexpr void apply_indices(const Tuple &, F &&f, std::index_sequence<Is...>) {
-  f(std::tuple_element_t<Is, Tuple>::value...);
 }
 
 template <typename Tuple, typename F>
 constexpr void for_each_index(const Tuple &t, F &&f) {
+  auto apply_indices = []<std::size_t... Is>(const Tuple &, F &&f,
+                                             std::index_sequence<Is...>) {
+    f(std::tuple_element_t<Is, Tuple>::value...);
+  };
   constexpr std::size_t N = std::tuple_size_v<Tuple>;
   apply_indices(t, std::forward<F>(f), std::make_index_sequence<N>{});
 }
