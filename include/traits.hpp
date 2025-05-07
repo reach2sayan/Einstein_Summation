@@ -229,6 +229,7 @@ template <typename T> struct flatten_tuple {
   using type = std::tuple<T>;
 };
 
+
 template <typename... Ts> struct flatten_tuple<std::tuple<Ts...>> {
   using type = decltype(std::tuple_cat(
       std::declval<typename flatten_tuple<Ts>::type>()...));
@@ -236,14 +237,11 @@ template <typename... Ts> struct flatten_tuple<std::tuple<Ts...>> {
 
 template <typename T> using flatten_tuple_t = typename flatten_tuple<T>::type;
 
-template <typename Tuple> struct map_flatten_tuple;
-
-template <typename... Ts> struct map_flatten_tuple<std::tuple<Ts...>> {
-  using type = std::tuple<flatten_tuple_t<Ts>...>;
-};
+template<typename... Ts>
+std::tuple<flatten_tuple_t<Ts>...> constexpr map_flatten_tuple(std::tuple<Ts...>);
 
 template <typename T>
-using map_flatten_tuple_t = typename map_flatten_tuple<T>::type;
+using map_flatten_tuple_t = decltype(map_flatten_tuple(std::declval<T>()));
 
 constexpr std::size_t NOT_FOUND = static_cast<std::size_t>(-1);
 
