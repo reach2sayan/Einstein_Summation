@@ -293,7 +293,6 @@ constexpr auto extract_indices(const Tuple &, std::index_sequence<Is...>) {
   return std::index_sequence<std::tuple_element_t<Is, Tuple>::value...>{};
 }
 
-// Helper to convert integral_constant tuple to index pack
 template <typename Tuple, typename F, std::size_t... Is>
 constexpr void apply_indices(const Tuple &, F &&f, std::index_sequence<Is...>) {
   f(std::tuple_element_t<Is, Tuple>::value...);

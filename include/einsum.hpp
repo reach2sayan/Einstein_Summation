@@ -102,13 +102,10 @@ public:
   constexpr void assign(MatRes &matres, MatL &matl, MatR &matr,
                         const OutIndex &outidx, const LeftIndex &leftidx,
                         const RightIndex &rightidx) {
-    for_each_index(outidx, [&](auto... outi) {
-      for_each_index(leftidx, [&](auto... li) {
-        for_each_index(rightidx, [&](auto... ri) {
-          auto mat_l = matl[li...];
-          auto mat_r = matr[ri...];
-          auto sum = mat_l * mat_r;
-          matres[outi...] += sum;
+    for_each_index(outidx, [&](auto&&... outi) {
+      for_each_index(leftidx, [&](auto&&... li) {
+        for_each_index(rightidx, [&](auto&&... ri) {
+          matres[outi...] += matl[li...] * matr[ri...];
         });
       });
     });
@@ -118,17 +115,15 @@ public:
             typename RightIndex>
   constexpr void assign_noleft(MatRes &matres, Mat &matr, const OutIndex &out,
                                const RightIndex &rightidx) {
-    for_each_index(out, [&](auto... outi) {
-      for_each_index(rightidx, [&](auto... ri) {
-        auto mat_r = matr[ri...];
-        auto sum = mat_r;
-        matres[outi...] += sum;
+    for_each_index(out, [&](auto&&... outi) {
+      for_each_index(rightidx, [&](auto&&... ri) {
+        matres[outi...] += matr[ri...];
       });
     });
   }
 
   template <typename CollapsedTupleIndex, typename OutTupleIndex>
-  auto apply_single_noleft(CollapsedTupleIndex, OutTupleIndex) {
+  consteval auto apply_single_noleft(CollapsedTupleIndex, OutTupleIndex) {
     using ridx = flatten_tuple_t<
         decltype(build_result_tuple<right_labels, output_labels, OutTupleIndex,
                                     collapsed_labels, CollapsedTupleIndex>())>;
@@ -136,7 +131,7 @@ public:
   }
 
   template <typename CollapsedTupleIndex, typename OutTupleIndex>
-  auto apply_single(CollapsedTupleIndex, OutTupleIndex) {
+  constexpr auto apply_single(CollapsedTupleIndex, OutTupleIndex) {
     using ridx = flatten_tuple_t<
         decltype(build_result_tuple<right_labels, output_labels, OutTupleIndex,
                                     collapsed_labels, CollapsedTupleIndex>())>;
@@ -149,24 +144,23 @@ public:
 
   template <std::size_t... Dims>
   constexpr static auto
-  make_mdspan(auto *data, std::integer_sequence<std::size_t, Dims...>) {
+  make_mdspan(auto&& data, std::integer_sequence<std::size_t, Dims...>) {
     return std::mdspan<T, std::extents<std::size_t, Dims...>>{data};
   }
 
 public:
-  Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
-         std::mdspan<T, std::extents<size_t, DimsB...>> B,
-         fixed_string<sizeof...(CsA)> la, fixed_string<sizeof...(CsB)> lb,
-         fixed_string<sizeof...(CsRes)> lres)
-      : matrices{A, B}, lstr{la}, rstr{lb}, resstr{lres},
-        result_matrix{new T[std::decay_t<decltype(*this)>::result_size]{}},
+  constexpr Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
+                   std::mdspan<T, std::extents<size_t, DimsB...>> B,
+                   fixed_string<sizeof...(CsA)> la,
+                   fixed_string<sizeof...(CsB)> lb,
+                   fixed_string<sizeof...(CsRes)> lres)
+      : matrices{A, B}, lstr{std::move(la)}, rstr{std::move(lb)}, resstr{std::move(lres)},
+        result_matrix{},
         result_span{make_mdspan(result_matrix, extract_dims<output_labels>())} {
   }
 
-  ~Einsum() { delete[] result_matrix; }
-
   constexpr auto eval();
-  auto get_result() const { return result_span; }
+  constexpr auto get_result() const { return result_span; }
 
 private:
   const std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
@@ -176,7 +170,7 @@ private:
   const fixed_string<sizeof...(CsA)> lstr;
   const fixed_string<sizeof...(CsB)> rstr;
   const fixed_string<sizeof...(CsRes)> resstr;
-  T *result_matrix;
+  T result_matrix[result_size];
   decltype(make_mdspan(result_matrix,
                        extract_dims<output_labels>())) result_span;
 };
@@ -230,7 +224,6 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
        Labels<CsB...>, Labels<CsRes...>>::eval() {
 
   using self = typename std::decay_t<decltype(*this)>;
-  // inner loop
   auto collapsing_loop = [&]<typename TupleLike>(TupleLike) {
     std::apply(
         [&](auto &&...args_inner) {
@@ -272,7 +265,7 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
     if constexpr (sizeof...(args) != 0)
       (collapsing_loop(args), ...);
   };
-  std::apply(outer_loop, typename self::out_index{});
+  std::apply(std::move(outer_loop), typename self::out_index{});
 }
 
 template <typename MDSpan, std::size_t... Is>

@@ -28,6 +28,8 @@ include(FetchContent)
 FetchContent_Declare(
         googletest
         URL https://github.com/google/googletest/archive/5376968f6948923e2411081fd9372e71a59d8e77.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
@@ -36,6 +38,7 @@ FetchContent_Declare(
         mdspan
         GIT_REPOSITORY https://github.com/kokkos/mdspan.git
         GIT_TAG stable
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(mdspan)
 
@@ -43,7 +46,8 @@ include(FetchContent)
 FetchContent_Declare(
         benchmark
         GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG        v1.9.1 # Replace with the desired version
+        GIT_TAG        v1.9.1
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(benchmark)
 
@@ -61,7 +65,8 @@ target_include_directories(main PRIVATE
         ${mdspan_SOURCE_DIR}/include
 )
 
-add_executable(tests tests.cpp)
+add_executable(tests tests.cpp
+        benchmark.cpp)
 target_link_libraries(tests PUBLIC gtest_main einsum benchmark::benchmark)
 target_include_directories(tests PRIVATE
         ${CMAKE_SOURCE_DIR}/include
