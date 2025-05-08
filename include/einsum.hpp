@@ -122,7 +122,7 @@ public:
   }
 
   template <typename CollapsedTupleIndex, typename OutTupleIndex>
-  consteval auto apply_single_noleft(CollapsedTupleIndex, OutTupleIndex) {
+  consteval auto apply_single_noleft(const CollapsedTupleIndex&, const OutTupleIndex&) {
     using ridx = flatten_tuple_t<
         decltype(build_result_tuple<right_labels, output_labels, OutTupleIndex,
                                     collapsed_labels, CollapsedTupleIndex>())>;
@@ -130,7 +130,7 @@ public:
   }
 
   template <typename CollapsedTupleIndex, typename OutTupleIndex>
-  constexpr auto apply_single(CollapsedTupleIndex, OutTupleIndex) {
+  constexpr auto apply_single(const CollapsedTupleIndex&, const OutTupleIndex&) {
     using ridx = flatten_tuple_t<
         decltype(build_result_tuple<right_labels, output_labels, OutTupleIndex,
                                     collapsed_labels, CollapsedTupleIndex>())>;
@@ -181,8 +181,8 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
        Labels<CsB...>, Labels<CsRes...>>::print_eval() {
 #ifndef NDEBUG
   using self = typename std::decay_t<decltype(*this)>;
-  auto apply_single = [=]<typename CollapsedTupleIndex, typename OutTupleIndex>(
-                          CollapsedTupleIndex, OutTupleIndex) {
+  auto apply_single = [&]<typename CollapsedTupleIndex, typename OutTupleIndex>(
+                          const CollapsedTupleIndex&, const OutTupleIndex&) {
     using ridx = flatten_tuple_t<
         decltype(build_result_tuple<typename self::right_labels,
                                     typename self::output_labels, OutTupleIndex,
@@ -204,16 +204,16 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
   };
 
   // inner loop
-  auto collapsing_loop = [=]<typename TupleLike>(TupleLike) {
+  auto collapsing_loop = [&]<typename TupleLike>(TupleLike&&) {
     std::apply(
-        [=](auto &&...args_inner) {
+        [&](auto &&...args_inner) {
           (apply_single(args_inner, TupleLike{}), ...);
         },
         typename self::collapsed_index{});
   };
 
-  auto outer_loop = [=](auto &&...args) { (collapsing_loop(args), ...); };
-  std::apply(outer_loop, typename self::out_index{});
+  auto outer_loop = [&](auto &&...args) { (collapsing_loop(args), ...); };
+  std::apply(std::move(outer_loop), typename self::out_index{});
 #endif
 }
 template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
@@ -223,7 +223,7 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
        Labels<CsB...>, Labels<CsRes...>>::eval() {
 
   using self = typename std::decay_t<decltype(*this)>;
-  auto collapsing_loop = [&]<typename TupleLike>(TupleLike) {
+  auto collapsing_loop = [&]<typename TupleLike>(const TupleLike&) {
     std::apply(
         [&](auto &&...args_inner) {
           if constexpr (sizeof...(args_inner) != 0 &&
@@ -268,7 +268,7 @@ Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
 }
 
 template <typename MDSpan, std::size_t... Is>
-constexpr auto make_matrix_from_mdspan(std::index_sequence<Is...>) {
+consteval auto make_matrix_from_mdspan(std::index_sequence<Is...>) {
   using T = typename MDSpan::element_type;
   using Extents = typename MDSpan::extents_type;
   return Matrix<T, Extents::static_extent(Is)...>{};
@@ -299,7 +299,6 @@ constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
     using LabelR =
         EinsumTraits::filter_unique_t<decltype(EinsumTraits::union_of(
             std::declval<LabelA>(), std::declval<LabelB>()))>;
-    // typename EinsumTraits::union_of<LabelA, LabelB>::type>;
     auto fre = to_fixed_string_v<LabelR>;
     return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
                                                          fre};
