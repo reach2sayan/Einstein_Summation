@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <ranges>
 #include <tuple>
 
@@ -39,31 +40,29 @@ template <typename... LabeledDimensions> struct LabeledExtents {
   using dims = std::tuple<LabeledDimensions...>;
 };
 
-template <typename Dims, typename Labels> struct MatrixLabelCombinator;
-
-template <> struct MatrixLabelCombinator<std::index_sequence<0>, Labels<>> {
-  using dims = std::tuple<>;
-  using type = LabeledExtents<>;
-};
-
 template <std::size_t... Dims, char... Cs>
-struct MatrixLabelCombinator<std::index_sequence<Dims...>, Labels<Cs...>> {
-  static_assert(sizeof...(Dims) == sizeof...(Cs),
-                "Mismatch in dimensions and labels");
-  using type = LabeledExtents<LabeledDimension<Dims, Cs>...>;
-  using dims = std::tuple<LabeledDimension<Dims, Cs>...>;
-};
+consteval auto MatrixLabelCombinator(std::index_sequence<Dims...>, Labels<Cs...>) {
+  if constexpr (sizeof...(Cs) == 0) {
+    static_assert(
+        std::is_same_v<std::index_sequence<Dims...>, std::index_sequence<0>>);
+    return LabeledExtents<>{};
+  } else {
+    static_assert(sizeof...(Dims) == sizeof...(Cs),
+                  "Mismatch in dimensions and labels");
+    return LabeledExtents<LabeledDimension<Dims, Cs>...>{};
+  }
+}
 
 template <typename TMatrix, typename TLabel>
-using matrix_with_labeled_dims_t =
-    MatrixLabelCombinator<typename TMatrix::seq, TLabel>::type;
+using matrix_with_labeled_dims_t = decltype(MatrixLabelCombinator(
+    std::declval<typename TMatrix::seq>(), std::declval<TLabel>()));
 
-consteval auto array_of(std::tuple<>) {
+consteval auto array_of(std::tuple<>&&) {
   return std::array<std::pair<char, std::size_t>, 0>{};
 }
 
 template <typename Head, typename... Tail>
-consteval auto array_of(std::tuple<Head, Tail...>) {
+consteval auto array_of(std::tuple<Head, Tail...>&&) {
   return std::array{std::make_pair(Head::label, Head::dim),
                     std::make_pair(Tail::label, Tail::dim)...};
 }
@@ -78,20 +77,19 @@ struct filter<Pred, Labels<Cs...>> {
   using maybe_label = std::conditional_t<Pred<C>::value, Labels<C>, Labels<>>;
 
   template <char... As, char... Bs>
-  static auto concat(Labels<As...> &&, Labels<Bs...> &&) {
+  static consteval auto concat(Labels<As...> &&, Labels<Bs...> &&) {
     return Labels<As..., Bs...>{};
   }
 
-  template <typename Last>
-  static consteval auto concat_all_impl(Last&&) {
+  template <typename Last> static consteval auto concat_all_impl(Last &&) {
     return Last{};
   }
 
   template <typename First, typename... Rest>
-  static consteval auto concat_all_impl(First&&, Rest&&...) {
+  static consteval auto concat_all_impl(First &&, Rest &&...) {
     using rest_concat = decltype(concat_all_impl(std::declval<Rest>()...));
     return decltype(concat(std::declval<First>(),
-                        std::declval<rest_concat>())){};
+                           std::declval<rest_concat>())){};
   }
 
   using type = decltype(concat_all_impl(maybe_label<Cs>{}...));
@@ -148,12 +146,8 @@ consteval auto make_iota_tuple_impl(std::tuple<Ts...>)
 template <typename Tuple>
 using tuple_iota_t = decltype(make_iota_tuple_impl(std::declval<Tuple>()));
 
-template <typename T, typename Tuple> struct prepend_all;
-
 template <typename T, typename... Tuples>
-struct prepend_all<T, std::tuple<Tuples...>> {
-  using type = std::tuple<std::tuple<T, Tuples>...>;
-};
+auto prepend_all(T&&, std::tuple<Tuples...>&&) -> std::tuple<std::tuple<T, Tuples>...>;
 
 template <typename... Seqs> struct cartesian_product;
 
@@ -172,9 +166,7 @@ struct cartesian_product<std::index_sequence<Is...>, Rest...> {
   using rest_product = typename cartesian_product<Rest...>::type;
 
   template <std::size_t I>
-  using prepend = typename prepend_all<std::integral_constant<std::size_t, I>,
-                                       rest_product>::type;
-
+  using prepend = decltype(prepend_all(std::declval<std::integral_constant<std::size_t, I>>(), std::declval<rest_product>()));
   using type = decltype(std::tuple_cat(std::declval<prepend<Is>>()...));
 };
 
@@ -216,18 +208,18 @@ template <typename Labels, typename LabeledTuple>
 using extract_labeled_dimensions_t = decltype(extract_labeled_dimensions(
     std::declval<Labels>(), std::declval<LabeledTuple>()));
 
-template <typename T> auto flatten_tuple_impl(T &&) -> std::tuple<T>;
+template <typename T> auto flatten_tuple(T &&) -> std::tuple<T>;
 
 template <typename... Ts>
-consteval auto flatten_tuple_impl(std::tuple<Ts...> &&) {
+consteval auto flatten_tuple(std::tuple<Ts...> &&) {
   if constexpr (sizeof...(Ts) == 1) {
     return std::tuple{Ts{}...};
   }
-  return std::tuple_cat(flatten_tuple_impl(Ts{})...);
+  return std::tuple_cat(flatten_tuple(Ts{})...);
 }
 
 template <typename T>
-using flatten_tuple_t = decltype(flatten_tuple_impl(std::declval<T>()));
+using flatten_tuple_t = decltype(flatten_tuple(std::declval<T>()));
 
 template <typename... Ts>
 auto consteval map_flatten_tuple(std::tuple<Ts...>)
@@ -309,7 +301,7 @@ template <typename Tuple> consteval auto extract_dims() {
 template <char Target, char... Cs>
 constexpr std::size_t count = ((Target == Cs ? 1 : 0) + ...);
 
-template <char C, char... Cs> auto append(Labels<Cs...>) -> Labels<Cs..., C>;
+template <char C, char... Cs> consteval auto append(Labels<Cs...>) -> Labels<Cs..., C>;
 
 template <typename In> struct filter_unique;
 template <char... Cs> struct filter_unique<Labels<Cs...>> {
