@@ -71,28 +71,30 @@ consteval auto array_of(std::tuple<Head, Tail...>) {
 template <char C, char... Cs>
 struct contains : std::bool_constant<((C == Cs) || ...)> {};
 
-template <typename A, typename B> struct concat;
-template <char... As, char... Bs> struct concat<Labels<As...>, Labels<Bs...>> {
-  using type = Labels<As..., Bs...>;
-};
-
 template <template <char> class Pred, typename Pack> struct filter;
 template <template <char> class Pred, char... Cs>
 struct filter<Pred, Labels<Cs...>> {
   template <char C>
   using maybe_label = std::conditional_t<Pred<C>::value, Labels<C>, Labels<>>;
 
-  template <typename... Ls> struct concat_all;
-  template <typename First, typename... Rest>
-  struct concat_all<First, Rest...> {
-    using type =
-        typename concat<First, typename concat_all<Rest...>::type>::type;
-  };
+  template <char... As, char... Bs>
+  static auto concat(Labels<As...> &&, Labels<Bs...> &&) {
+    return Labels<As..., Bs...>{};
+  }
 
-  template <typename Last> struct concat_all<Last> {
-    using type = Last;
-  };
-  using type = typename concat_all<maybe_label<Cs>...>::type;
+  template <typename Last>
+  static consteval auto concat_all_impl(Last&&) {
+    return Last{};
+  }
+
+  template <typename First, typename... Rest>
+  static consteval auto concat_all_impl(First&&, Rest&&...) {
+    using rest_concat = decltype(concat_all_impl(std::declval<Rest>()...));
+    return decltype(concat(std::declval<First>(),
+                        std::declval<rest_concat>())){};
+  }
+
+  using type = decltype(concat_all_impl(maybe_label<Cs>{}...));
 };
 
 template <char... As, char... Bs>
@@ -110,11 +112,6 @@ struct difference<Labels<As...>, Labels<Bs...>> {
 
 template <typename In, typename Seen = Labels<>, typename Out = Labels<>>
 struct unique_impl;
-
-template <char... Cs> auto unique_impl_impl(Labels<Cs...>) {
-  std::array cs{Cs...};
-  std::array<int, sizeof...(Cs)>{};
-}
 
 template <char Head, char... Tail, char... SeenChars, char... OutChars>
 struct unique_impl<Labels<Head, Tail...>, Labels<SeenChars...>,
