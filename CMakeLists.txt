@@ -65,8 +65,8 @@ target_include_directories(main PRIVATE
         ${mdspan_SOURCE_DIR}/include
 )
 
-add_executable(tests tests.cpp
-        benchmark.cpp)
+add_executable(tests tests.cpp)
+	# benchmark.cpp)
 target_link_libraries(tests PUBLIC gtest_main einsum benchmark::benchmark)
 target_include_directories(tests PRIVATE
         ${CMAKE_SOURCE_DIR}/include

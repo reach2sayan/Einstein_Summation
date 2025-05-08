@@ -184,14 +184,12 @@ struct cartesian_product<std::index_sequence<Is...>, Rest...> {
 
 template <typename TupleOfLabeledDims> struct cartesian_from_labeled_dims {
 private:
-  using iota_tuple = tuple_iota_t<TupleOfLabeledDims>;
-  template <typename... Seqs> struct apply;
-  template <typename... Seqs> struct apply<std::tuple<Seqs...>> {
-    using type = typename cartesian_product<Seqs...>::type;
-  };
-
+  template <typename... Seqs> static consteval auto apply(std::tuple<Seqs...>) {
+    return typename cartesian_product<Seqs...>::type{};
+  }
 public:
-  using type = typename apply<iota_tuple>::type;
+  using type =
+      decltype(apply(std::declval<tuple_iota_t<TupleOfLabeledDims>>()));
 };
 
 template <typename Tuple>
@@ -223,19 +221,18 @@ template <typename Labels, typename LabeledTuple>
 using extract_labeled_dimensions_t =
     typename extract_labeled_dimensions<Labels, LabeledTuple>::type;
 
-template <typename T> struct flatten_tuple {
-  using type = std::tuple<T>;
-};
-
-template <typename... Ts> struct flatten_tuple<std::tuple<Ts...>> {
-  using type = decltype(std::tuple_cat(
-      std::declval<typename flatten_tuple<Ts>::type>()...));
-};
-
-template <typename T> using flatten_tuple_t = typename flatten_tuple<T>::type;
-
+template <typename T> auto flatten_tuple_impl(T&&) -> std::tuple<T>;
 template <typename... Ts>
-auto constexpr map_flatten_tuple(std::tuple<Ts...>)
+consteval auto flatten_tuple_impl(std::tuple<Ts...>&&) {
+  if constexpr (sizeof...(Ts) == 1) {
+    return std::tuple{Ts{}...};
+  }
+  return std::tuple_cat(flatten_tuple_impl(Ts{})...);
+}
+
+template <typename T> using flatten_tuple_t = decltype(flatten_tuple_impl(std::declval<T>()));
+template <typename... Ts>
+auto consteval map_flatten_tuple(std::tuple<Ts...>)
     -> std::tuple<flatten_tuple_t<Ts>...>;
 
 template <typename T>
@@ -313,32 +310,23 @@ template <typename Tuple> consteval auto extract_dims() {
 
 template <char Target, char... Cs>
 constexpr std::size_t count = ((Target == Cs ? 1 : 0) + ...);
-/*
-// Append a char to Labels
-template <char C, typename L> struct append;
 
-template <char C, char... Cs> struct append<C, Labels<Cs...>> {
-  using type = Labels<Cs..., C>;
-};*/
-template <char C, char... Cs>
-auto append(Labels<Cs...>) -> Labels<Cs..., C>;
+template <char C, char... Cs> auto append(Labels<Cs...>) -> Labels<Cs..., C>;
 
 template <typename In> struct filter_unique;
 template <char... Cs> struct filter_unique<Labels<Cs...>> {
 private:
   template <typename Accum, char Current, char... Rest> struct helper {
     static constexpr std::size_t n = count<Current, Cs...>;
-    using next =
-        std::conditional_t<(n == 1), decltype(append<Current>(std::declval<Accum>())),
-                           Accum>;
+    using next = std::conditional_t<
+        (n == 1), decltype(append<Current>(std::declval<Accum>())), Accum>;
     using type = typename helper<next, Rest...>::type;
   };
 
   template <typename Accum, char Current> struct helper<Accum, Current> {
     static constexpr std::size_t n = count<Current, Cs...>;
-    using type =
-        std::conditional_t<(n == 1), decltype(append<Current>(std::declval<Accum>())),
-                           Accum>;
+    using type = std::conditional_t<
+        (n == 1), decltype(append<Current>(std::declval<Accum>())), Accum>;
   };
 
 public:
