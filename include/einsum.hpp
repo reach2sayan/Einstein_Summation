@@ -102,9 +102,9 @@ public:
   constexpr void assign(MatRes &matres, MatL &matl, MatR &matr,
                         const OutIndex &outidx, const LeftIndex &leftidx,
                         const RightIndex &rightidx) {
-    for_each_index(outidx, [&](auto&&... outi) {
-      for_each_index(leftidx, [&](auto&&... li) {
-        for_each_index(rightidx, [&](auto&&... ri) {
+    for_each_index(outidx, [&](auto &&...outi) {
+      for_each_index(leftidx, [&](auto &&...li) {
+        for_each_index(rightidx, [&](auto &&...ri) {
           matres[outi...] += matl[li...] * matr[ri...];
         });
       });
@@ -115,10 +115,9 @@ public:
             typename RightIndex>
   constexpr void assign_noleft(MatRes &matres, Mat &matr, const OutIndex &out,
                                const RightIndex &rightidx) {
-    for_each_index(out, [&](auto&&... outi) {
-      for_each_index(rightidx, [&](auto&&... ri) {
-        matres[outi...] += matr[ri...];
-      });
+    for_each_index(out, [&](auto &&...outi) {
+      for_each_index(rightidx,
+                     [&](auto &&...ri) { matres[outi...] += matr[ri...]; });
     });
   }
 
@@ -144,7 +143,7 @@ public:
 
   template <std::size_t... Dims>
   constexpr static auto
-  make_mdspan(auto&& data, std::integer_sequence<std::size_t, Dims...>) {
+  make_mdspan(auto &&data, std::integer_sequence<std::size_t, Dims...>) {
     return std::mdspan<T, std::extents<std::size_t, Dims...>>{data};
   }
 
@@ -154,8 +153,8 @@ public:
                    fixed_string<sizeof...(CsA)> la,
                    fixed_string<sizeof...(CsB)> lb,
                    fixed_string<sizeof...(CsRes)> lres)
-      : matrices{A, B}, lstr{std::move(la)}, rstr{std::move(lb)}, resstr{std::move(lres)},
-        result_matrix{},
+      : matrices{A, B}, lstr{std::move(la)}, rstr{std::move(lb)},
+        resstr{std::move(lres)}, result_matrix{},
         result_span{make_mdspan(result_matrix, extract_dims<output_labels>())} {
   }
 
@@ -297,8 +296,10 @@ constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
   using LabelA = label_t<fsl>;
   using LabelB = label_t<fsr>;
   if constexpr (fsres.size() == 0) {
-    using LabelR = EinsumTraits::filter_unique_t<
-        typename EinsumTraits::union_of<LabelA, LabelB>::type>;
+    using LabelR =
+        EinsumTraits::filter_unique_t<decltype(EinsumTraits::union_of(
+            std::declval<LabelA>(), std::declval<LabelB>()))>;
+    // typename EinsumTraits::union_of<LabelA, LabelB>::type>;
     auto fre = to_fixed_string_v<LabelR>;
     return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
                                                          fre};

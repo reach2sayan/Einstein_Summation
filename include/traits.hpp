@@ -95,11 +95,10 @@ struct filter<Pred, Labels<Cs...>> {
   using type = typename concat_all<maybe_label<Cs>...>::type;
 };
 
-template <typename A, typename B> struct union_of;
 template <char... As, char... Bs>
-struct union_of<Labels<As...>, Labels<Bs...>> {
-  using type = Labels<As..., Bs...>;
-};
+auto union_of(Labels<As...> &&, Labels<Bs...> &&) {
+  return Labels<As..., Bs...>{};
+}
 
 template <typename A, typename B> struct difference;
 template <char... As, char... Bs>
@@ -140,7 +139,7 @@ template <typename L> struct unique {
 };
 
 template <typename A, typename B, typename Res> struct collapsed_dimensions {
-  using unionAB = typename union_of<A, B>::type;
+  using unionAB = decltype(union_of(std::declval<A>(), std::declval<B>()));
   using diff = typename difference<unionAB, Res>::type;
   using type = typename unique<diff>::type;
 };
@@ -187,6 +186,7 @@ private:
   template <typename... Seqs> static consteval auto apply(std::tuple<Seqs...>) {
     return typename cartesian_product<Seqs...>::type{};
   }
+
 public:
   using type =
       decltype(apply(std::declval<tuple_iota_t<TupleOfLabeledDims>>()));
@@ -207,30 +207,31 @@ consteval auto find_by_label(std::tuple<LabeledDimension<Dim, L>, Rest...>) {
   }
 }
 
-template <typename Labels, typename LabeledTuple>
-struct extract_labeled_dimensions;
-
 template <char... Cs, typename LabeledTuple>
-struct extract_labeled_dimensions<Labels<Cs...>, LabeledTuple> {
-  template <char C>
-  using ld = decltype(find_by_label<C>(std::declval<LabeledTuple>()));
-  using type = std::tuple<LabeledDimension<ld<Cs>::dim, Cs>...>;
-};
+auto extract_labeled_dimensions(Labels<Cs...>, LabeledTuple) {
+  return std::make_tuple(
+      LabeledDimension<decltype(find_by_label<Cs>(
+                           std::declval<LabeledTuple>()))::dim,
+                       Cs>{}...);
+}
 
 template <typename Labels, typename LabeledTuple>
-using extract_labeled_dimensions_t =
-    typename extract_labeled_dimensions<Labels, LabeledTuple>::type;
+using extract_labeled_dimensions_t = decltype(extract_labeled_dimensions(
+    std::declval<Labels>(), std::declval<LabeledTuple>()));
 
-template <typename T> auto flatten_tuple_impl(T&&) -> std::tuple<T>;
+template <typename T> auto flatten_tuple_impl(T &&) -> std::tuple<T>;
+
 template <typename... Ts>
-consteval auto flatten_tuple_impl(std::tuple<Ts...>&&) {
+consteval auto flatten_tuple_impl(std::tuple<Ts...> &&) {
   if constexpr (sizeof...(Ts) == 1) {
     return std::tuple{Ts{}...};
   }
   return std::tuple_cat(flatten_tuple_impl(Ts{})...);
 }
 
-template <typename T> using flatten_tuple_t = decltype(flatten_tuple_impl(std::declval<T>()));
+template <typename T>
+using flatten_tuple_t = decltype(flatten_tuple_impl(std::declval<T>()));
+
 template <typename... Ts>
 auto consteval map_flatten_tuple(std::tuple<Ts...>)
     -> std::tuple<flatten_tuple_t<Ts>...>;
