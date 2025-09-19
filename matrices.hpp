@@ -13,10 +13,10 @@ template <typename T, typename LExt, typename RExt> struct Matrices;
 
 template <typename T, std::size_t... Ls, std::size_t... Rs>
 struct Matrices<T, std::index_sequence<Ls...>, std::index_sequence<Rs...>> {
-  std::mdspan<T, std::extents<size_t, Ls...>> left;
-  std::mdspan<T, std::extents<size_t, Rs...>> right;
-  std::array<int, sizeof...(Ls)> lidx{Ls...};
-  std::array<int, sizeof...(Rs)> ridx{Rs...};
+  std::mdspan<T, std::extents<std::size_t, Ls...>> left;
+  std::mdspan<T, std::extents<std::size_t, Rs...>> right;
+  std::array<std::size_t, sizeof...(Ls)> lidx{Ls...};
+  std::array<std::size_t, sizeof...(Rs)> ridx{Rs...};
   Matrices(auto &&L_, auto &&R_) : left{FWD(L_)}, right{FWD(R_)} {}
 };
 

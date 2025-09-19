@@ -36,9 +36,8 @@ int main() {
   auto [l,r, out] = parse_input(input);
   Labels<cseq<'b','h','w','i'>,cseq<'b','h','w','j'>, cseq<'b','i','j'>>
   labels(l, r, out);
-  auto ok = input_verifier(labels, m);
   Einsum ein(labels, m);
-  std::cout << ok << "\n";
+
   print_all(labels.left,labels.right, m.lidx, m.ridx);
   return 0;
 }

@@ -17,6 +17,7 @@ struct Labels<cseq<Ls...>, cseq<Rs...>, cseq<Out...>> {
   std::array<char, sizeof...(Ls)> left{};
   std::array<char, sizeof...(Rs)> right{};
   std::array<char, sizeof...(Out)> out{Out...};
+  constexpr static std::size_t out_size = sizeof...(Out);
   Labels(std::ranges::input_range auto &&left_,
          std::ranges::input_range auto &&right_,
          std::ranges::input_range auto &&out_) {
