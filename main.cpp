@@ -1,4 +1,6 @@
 #include "einsum.hpp"
+#include "input_handler.hpp"
+
 #include <vector>
 
 // clang-format off
@@ -19,7 +21,6 @@ for b in range(A.shape[0]): # b indexes both A and B, or B.shape[0], which must 
 // clang-format on
 
 template <typename... T> struct TD;
-
 int main() {
   //std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
   //std::vector B2{2, 5, 0, 1, 5, 7, 9, 2, 2, 3, 5, 1, 7, 5, 6, 3};
@@ -31,13 +32,13 @@ int main() {
   std::mdspan<int, std::extents<std::size_t, 4,4>> mdA2{A2.data()};
   std::mdspan<int, std::extents<std::size_t, 4,4>> mdB2{B2.data()};
   Matrices m{mdA2, mdB2};
-  auto lstr = BOOST_HANA_STRING("ij");
-  auto rstr = BOOST_HANA_STRING("jk");
-  auto outstr = BOOST_HANA_STRING("ik");
-  Labels labels = make_labels(lstr, rstr, outstr);
+  //auto [l,r,out] = parse_input("ij,jk->ik");
+  auto input = BOOST_HANA_STRING("ij,jk->ik");
+  auto labels = make_label_from_inputs(input);
   Einsum einsum(labels, m);
   einsum.eval();
   auto res = einsum.get_result();
+
   for (auto i = 0; i < 4; i++) {
     for (auto j = 0; j < 4; j++) {
       std::cout << res[i,j] << " ";

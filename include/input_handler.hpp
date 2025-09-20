@@ -5,25 +5,51 @@
 #ifndef EINSTEIN_SUMMATION2_HELPERS_HPP
 #define EINSTEIN_SUMMATION2_HELPERS_HPP
 #pragma once
-#include "labels.hpp"
-#include "fmt/printf.h"
-#include "matrices.hpp"
-#include <array>
-#include <cstddef>
-#include <map>
-#include <ranges>
 #include <string_view>
-#include <utility>
+#include <tuple>
 
-consteval auto parse_input(std::string_view input) {
-  auto in_iter = input.find("->");
-  auto in = input.substr(0, in_iter);
-  auto mid_iter = in.find(',');
-  auto left = in.substr(0, mid_iter);
-  auto right = in.substr(mid_iter + 1);
+consteval auto parse_input(auto input_string) {
+  auto [l,r,out] =
+      boost::hana::unpack(input_string, [](auto... chars) {
+        auto input = boost::hana::make_tuple(chars...);
 
-  auto out = input.substr(in_iter + 2);
-  return std::make_tuple(left, right, out);
+        // get left input
+        constexpr auto pos_comma = boost::hana::index_if(
+            input, [](auto c) { return c == boost::hana::char_c<','>; });
+        auto ls = boost::hana::take_front(input, *pos_comma);
+
+        // remove left input
+        auto rest =
+            boost::hana::drop_front(input, *pos_comma + boost::hana::size_c<1>);
+
+        // trim right input
+        constexpr auto pos_arrow = boost::hana::index_if(
+            rest, [](auto c) { return c == boost::hana::char_c<'-'>; });
+        auto rs = boost::hana::take_front(rest, *pos_arrow);
+
+        // trim right input
+        auto final =
+            boost::hana::drop_front(rest, *pos_comma + boost::hana::size_c<2>);
+
+        auto tuple_to_string = [](auto tup) {
+          return boost::hana::unpack(tup, [](auto... cs) {
+            return boost::hana::string<decltype(cs)::value...>{};
+          });
+        };
+
+        return std::make_tuple(tuple_to_string(ls), tuple_to_string(rs),
+                               tuple_to_string(final));
+      });
+
+  return boost::hana::make_tuple(l,r,out);
+}
+
+consteval auto make_label_from_inputs(auto input_string) {
+  auto lrout = parse_input(input_string);
+  auto l = boost::hana::at_c<0>(lrout);
+  auto r = boost::hana::at_c<1>(lrout);
+  auto out = boost::hana::at_c<2>(lrout);
+  return make_labels(l,r,out);
 }
 
 #endif // EINSTEIN_SUMMATION2_HELPERS_HPP

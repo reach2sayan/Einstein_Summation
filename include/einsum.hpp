@@ -5,8 +5,6 @@
 #ifndef EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #define EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #pragma once
-#include "fmt/color.h"
-#include "fmt/ranges.h"
 #include "labels.hpp"
 #include "matrices.hpp"
 #include "printers.hpp"
