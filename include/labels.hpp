@@ -5,7 +5,7 @@
 #ifndef EINSTEIN_SUMMATION2_MATRIX_HPP
 #define EINSTEIN_SUMMATION2_MATRIX_HPP
 #pragma once
-
+#include <boost/hana.hpp>
 namespace {
 template <typename LLabels, typename RLabels, typename OutLabels>
 consteval auto make_collapsed_labels(LLabels ll, RLabels rl, OutLabels ol) {
