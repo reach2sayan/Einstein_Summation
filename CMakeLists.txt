@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.8)
 project(Einstein_Summation2)
 if (MSVC)
     if (POLICY CMP0141)
@@ -11,17 +11,26 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
     set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 else ()
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         add_compile_options(-Wall -Wextra -pedantic)
         add_compile_options(-stdlib=libc++)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         add_compile_options(-Wall -Wextra -pedantic)
-    endif()
+    endif ()
 endif ()
 include(FetchContent)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Boost REQUIRED)
+
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/5376968f6948923e2411081fd9372e71a59d8e77.zip
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
 FetchContent_Declare(
         mdspan
@@ -34,8 +43,17 @@ FetchContent_MakeAvailable(mdspan)
 FetchContent_Declare(
         fmt
         GIT_REPOSITORY https://github.com/fmtlib/fmt
-        GIT_TAG        e69e5f977d458f2650bb346dadf2ad30c5320281) # 10.2.1
+        GIT_TAG e69e5f977d458f2650bb346dadf2ad30c5320281) # 10.2.1
 FetchContent_MakeAvailable(fmt)
+
+FetchContent_Declare(
+        benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG v1.9.1
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+FetchContent_MakeAvailable(benchmark)
+
 
 add_library(einsum INTERFACE
         ${CMAKE_SOURCE_DIR}/include/einsum.hpp
@@ -52,8 +70,16 @@ target_include_directories(main PRIVATE
         ${mdspan_SOURCE_DIR}/include)
 
 add_executable(tests tests/tests.cpp)
-target_link_libraries(tests PUBLIC einsum)
+target_link_libraries(tests PRIVATE gtest_main einsum)
 target_include_directories(tests PRIVATE
+        ${Boost_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/include
+        ${mdspan_SOURCE_DIR}/include
+)
+
+add_executable(measure benchmark/benchmark.cpp)
+target_link_libraries(measure PRIVATE gtest_main benchmark::benchmark einsum)
+target_include_directories(measure PRIVATE
         ${Boost_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
         ${mdspan_SOURCE_DIR}/include
