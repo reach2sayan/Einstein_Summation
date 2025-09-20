@@ -48,6 +48,14 @@ consteval auto make_output_iterator_label_map(ValueList iterator_indices,
   return maps;
 }
 
+template<typename Dims>
+consteval auto get_extents(Dims dims) {
+  auto extent = boost::hana::unpack(dims, [](auto... dims) {
+    return std::extents<std::size_t, dims...>();
+  });
+  return extent;
+}
+
 #define DECAY(x) std::remove_cvref_t<x>
 } // namespace
 #ifndef NDEBUG
@@ -84,15 +92,15 @@ public:
   constexpr static auto collapsed_iterator_label_map =
       make_output_iterator_label_map(collapsed_index_list, DECAY(Labels)::collapsed_labels);
 
-  consteval Einsum(std::same_as<Labels> auto &&,
+  constexpr Einsum(std::same_as<Labels> auto &&,
                    std::same_as<Matrices> auto &&) noexcept {}
-
+  constexpr static auto extents = get_extents(out_dims);
   constexpr void eval() const;
-
 private:
   constexpr static auto output_size = boost::hana::fold_left(
       out_dims, 1, [](auto x, auto y) { return x * y.value; });
   std::array<value_type, output_size> result{};
+  std::mdspan<value_type, DECAY(decltype(extents))> output{result.data(), extents};
 };
 
 template <CLabels Labels, CMatrices Matrices>
@@ -100,10 +108,6 @@ Einsum(Labels &&, Matrices &&) -> Einsum<Labels, Matrices>;
 
 template <CLabels Labels, CMatrices Matrices>
 constexpr void Einsum<Labels, Matrices>::eval() const {
-  auto output_span = boost::hana::unpack(out_dims, [this](auto... dims) {
-    return std::mdspan<value_type, std::extents<std::size_t, dims...>>(
-        result.data(), dims...);
-  });
 
   boost::hana::for_each(out_index_list, [](auto out_index) {
     boost::hana::for_each(collapsed_index_list, [&](auto collapsed_index) {

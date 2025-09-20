@@ -48,6 +48,7 @@ int main() {
   std::cout << std::endl;
   print_labeled_iterators(oit, ol);
   print_labeled_iterators(cit, cl);
+  einsum.eval();
 }
 
 
