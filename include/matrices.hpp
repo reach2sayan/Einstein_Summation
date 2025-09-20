@@ -16,9 +16,9 @@ template <typename T, typename LExt, typename RExt> struct Matrices;
 template <typename T, std::size_t... Ls, std::size_t... Rs>
 struct Matrices<T, std::index_sequence<Ls...>, std::index_sequence<Rs...>> {
   constexpr static auto left_extents =
-      boost::hana::make_tuple(boost::hana::int_c<Ls>...);
+      boost::hana::make_tuple(boost::hana::uint_c<Ls>...);
   constexpr static auto right_extents =
-      boost::hana::make_tuple(boost::hana::int_c<Rs>...);
+      boost::hana::make_tuple(boost::hana::uint_c<Rs>...);
 
   std::mdspan<T, std::extents<std::size_t, Ls...>> left;
   std::mdspan<T, std::extents<std::size_t, Rs...>> right;

@@ -25,12 +25,6 @@ for b in range(A.shape[0]): # b indexes both A and B, or B.shape[0], which must 
  */
 // clang-format on
 
-//constexpr char const lstr[] = "bhwi";
-//auto linput = boost::hana::integral_constant<char const*, lstr>{};
-
-//constexpr char const rstr[] = "bhwj";
-//auto rinput = boost::hana::integral_constant<char const*, rstr>{};
-
 using namespace boost::hana::literals;
 int main() {
   std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
