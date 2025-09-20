@@ -18,8 +18,12 @@ struct Matrices<T, std::index_sequence<Ls...>, std::index_sequence<Rs...>> {
   constexpr static auto right_extents =
       boost::hana::make_tuple(boost::hana::size_c<Rs>...);
 
-  std::mdspan<T, std::extents<std::size_t, Ls...>> left;
-  std::mdspan<T, std::extents<std::size_t, Rs...>> right;
+  using value_type = T;
+  using l_matrix_t = std::mdspan<T, std::extents<std::size_t, Ls...>>;
+  using r_matrix_t = std::mdspan<T, std::extents<std::size_t, Rs...>>;
+
+  l_matrix_t left;
+  r_matrix_t right;
   constexpr Matrices(auto &&L_, auto &&R_) : left{FWD(L_)}, right{FWD(R_)} {}
 };
 

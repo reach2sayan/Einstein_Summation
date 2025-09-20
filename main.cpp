@@ -1,11 +1,4 @@
-#include "fmt/chrono.h"
-#include <boost/hana.hpp>
 #include "einsum.hpp"
-#include "input_handler.hpp"
-#include "matrices.hpp"
-#include "printers.hpp"
-#include "labels.hpp"
-#include <fmt/core.h>
 #include <vector>
 
 // clang-format off
@@ -42,15 +35,19 @@ int main() {
   auto ll = labels_t::left_labels;
   auto rr = labels_t::right_labels;
   auto ol = labels_t::out_labels;
+  auto cl = labels_t::collapsed_labels;
 
   Einsum einsum(labels, m);
   using ein_t = decltype(einsum);
+  //TD<decltype(od)> _;
+  //einsum.eval();
+
   print_sequence(ein_t::out_index_list);
-  std::cout << "\n";
-  print_sequence(ein_t::collapsed_index_list);
-  //print_sequence(ein_t::out_index_list);
-  //TD<decltype(rr)> _;
-  std::cout << "\n";
+  auto oit = ein_t::output_iterator_label_map;
+  auto cit = ein_t::collapsed_iterator_label_map;
+  std::cout << std::endl;
+  print_labeled_iterators(oit, ol);
+  print_labeled_iterators(cit, cl);
 }
 
 

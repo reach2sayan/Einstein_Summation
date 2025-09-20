@@ -57,4 +57,15 @@ template <typename Map> void print_map(const Map &map) {
   std::cout << "}\n";
 }
 
+template <typename Map, typename Label>
+void print_labeled_iterators(const Map &map, Label labels) {
+  boost::hana::for_each(map, [&](auto const &m) {
+    std::cout << "{ ";
+    boost::hana::for_each(labels, [&](auto k) {
+      std::cout << k.value << ": " << boost::hana::at_key(m, k) << " ";
+    });
+    std::cout << "}\n";
+  });
+}
+
 #endif // EINSTEIN_SUMMATION2_PRINTERS_HPP
