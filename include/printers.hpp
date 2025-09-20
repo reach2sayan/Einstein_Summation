@@ -5,7 +5,6 @@
 #ifndef EINSTEIN_SUMMATION2_PRINTERS_HPP
 #define EINSTEIN_SUMMATION2_PRINTERS_HPP
 #pragma once
-#include <boost/hana.hpp>
 #include <iostream>
 
 template <typename Tuple> void print_tuple(const Tuple &tup) {

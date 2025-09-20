@@ -4,9 +4,7 @@
 
 #ifndef EINSTEIN_SUMMATION2_MATRICES_HPP
 #define EINSTEIN_SUMMATION2_MATRICES_HPP
-
-#include <array>
-#include <boost/hana.hpp>
+#pragma once
 #include <experimental/mdspan>
 #include <type_traits>
 
