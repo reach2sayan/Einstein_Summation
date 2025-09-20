@@ -115,7 +115,6 @@ Einsum(Labels &&, Matrices &&) -> Einsum<Labels, Matrices>;
 
 template <CLabels Labels, CMatrices Matrices>
 constexpr void Einsum<Labels, Matrices>::eval() const {
-
   boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
     boost::hana::for_each(
         collapsed_iterator_label_map, [&](auto collapsed_indices_map) {

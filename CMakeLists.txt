@@ -37,9 +37,27 @@ FetchContent_Declare(
         GIT_TAG        e69e5f977d458f2650bb346dadf2ad30c5320281) # 10.2.1
 FetchContent_MakeAvailable(fmt)
 
-add_executable(Einstein_Summation2 main.cpp)
-target_link_libraries(Einstein_Summation2  fmt::fmt)
-target_include_directories(Einstein_Summation2 PRIVATE
+add_library(einsum INTERFACE
+        ${CMAKE_SOURCE_DIR}/include/einsum.hpp
+        ${CMAKE_SOURCE_DIR}/include/labels.hpp
+        ${CMAKE_SOURCE_DIR}/include/matrices.hpp
+        ${CMAKE_SOURCE_DIR}/include/input_handler.hpp
+)
+
+add_executable(main main.cpp)
+target_link_libraries(main fmt::fmt einsum)
+target_include_directories(main PRIVATE
         ${Boost_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/include
         ${mdspan_SOURCE_DIR}/include)
+
+add_executable(tests tests/tests.cpp)
+target_link_libraries(tests PUBLIC einsum)
+target_include_directories(tests PRIVATE
+        ${Boost_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/include
+        ${mdspan_SOURCE_DIR}/include
+)
+
+add_test(NAME tests COMMAND tests)
+enable_testing()
