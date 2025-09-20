@@ -5,9 +5,12 @@
 #ifndef EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #define EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #pragma once
+#include "fmt/color.h"
+#include "fmt/ranges.h"
 #include "labels.hpp"
 #include "matrices.hpp"
 #include "printers.hpp"
+
 #include <boost/hana.hpp>
 namespace {
 template <typename Keys, typename Values>
@@ -116,13 +119,27 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
           // clang-format off
 
           // clang-format on
-
-          //auto aindices = boost::hana::transform(DECAY(Labels)::left_labels,
-          //                                       get_indices_from_map);
-          //auto bindices = boost::hana::transform(DECAY(Labels)::right_labels,
-          //                                       get_indices_from_map);
-
+          auto get_indices_from_map = [&](auto key) {
+            auto found_in_out_map = boost::hana::find(out_indices_map, key);
+            if constexpr (!boost::hana::is_nothing(found_in_out_map)) {
+              return *found_in_out_map;
+            } else {
+              auto found_in_collapsed_map =
+                  boost::hana::find(collapsed_indices_map, key);
+              return *found_in_collapsed_map;
+            }
+          };
+          auto aindices = boost::hana::transform(DECAY(Labels)::left_labels,
+                                                 get_indices_from_map);
+          auto bindices = boost::hana::transform(DECAY(Labels)::right_labels,
+                                                 get_indices_from_map);
           auto out_indices = boost::hana::values(out_indices_map);
+          print_sequence(out_indices);
+          std::cout << " += ";
+          print_sequence(aindices);
+          std::cout << " * ";
+          print_sequence(bindices);
+          std::cout << "\n";
           boost::hana::unpack(out_indices, [&](auto... out_indx) {
             output[out_indx...] += 42;
           });
