@@ -5,6 +5,7 @@
 #ifndef EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #define EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #pragma once
+#include "input_handler.hpp"
 #include "labels.hpp"
 #include "matrices.hpp"
 #include "printers.hpp"
@@ -145,5 +146,13 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
         });
   });
 }
+
+#define make_einsum(name, inputstring, spanA, spanB)                           \
+  auto name = [spanA, spanB]() {                                               \
+    Matrices m{spanA, spanB};                                                  \
+    auto input = BOOST_HANA_STRING(inputstring);                               \
+    auto labels = make_label_from_inputs(input);                               \
+    return Einsum{labels, m};                                                  \
+  }();
 
 #endif // EINSTEIN_SUMMATION2_EINSUM_2_HPP

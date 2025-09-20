@@ -33,9 +33,7 @@ int main() {
   std::mdspan<int, std::extents<std::size_t, 4,4>> mdB2{B2.data()};
   Matrices m{mdA2, mdB2};
   //auto [l,r,out] = parse_input("ij,jk->ik");
-  auto input = BOOST_HANA_STRING("ij,jk->ik");
-  auto labels = make_label_from_inputs(input);
-  Einsum einsum(labels, m);
+  make_einsum(einsum, "ij,jk->ik", mdA2, mdB2);
   einsum.eval();
   auto res = einsum.get_result();
 

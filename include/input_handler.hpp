@@ -5,6 +5,8 @@
 #ifndef EINSTEIN_SUMMATION2_HELPERS_HPP
 #define EINSTEIN_SUMMATION2_HELPERS_HPP
 #pragma once
+#include <boost/hana.hpp>
+#include "labels.hpp"
 #include <string_view>
 #include <tuple>
 
