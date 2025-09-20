@@ -37,13 +37,9 @@ FetchContent_Declare(
         GIT_TAG        e69e5f977d458f2650bb346dadf2ad30c5320281) # 10.2.1
 FetchContent_MakeAvailable(fmt)
 
-add_executable(Einstein_Summation2 main.cpp
-        einsum.hpp
-        labels.hpp
-        matrices.hpp
-        traits.hpp
-        input_handler.hpp)
+add_executable(Einstein_Summation2 main.cpp)
 target_link_libraries(Einstein_Summation2  fmt::fmt)
 target_include_directories(Einstein_Summation2 PRIVATE
         ${Boost_INCLUDE_DIRS}
+        ${CMAKE_SOURCE_DIR}/include
         ${mdspan_SOURCE_DIR}/include)

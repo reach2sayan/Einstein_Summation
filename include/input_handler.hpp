@@ -5,13 +5,15 @@
 #ifndef EINSTEIN_SUMMATION2_HELPERS_HPP
 #define EINSTEIN_SUMMATION2_HELPERS_HPP
 #pragma once
-#include "fmt/printf.h"
 #include "labels.hpp"
+#include "fmt/printf.h"
 #include "matrices.hpp"
 #include <array>
+#include <cstddef>
 #include <map>
 #include <ranges>
 #include <string_view>
+#include <utility>
 
 consteval auto parse_input(std::string_view input) {
   auto in_iter = input.find("->");

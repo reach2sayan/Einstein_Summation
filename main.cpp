@@ -1,7 +1,11 @@
-#include "einsum.hpp"
 #include "fmt/chrono.h"
+#include <boost/hana.hpp>
+#include "einsum.hpp"
+#include "input_handler.hpp"
+#include "matrices.hpp"
+#include "printers.hpp"
+#include "labels.hpp"
 #include <fmt/core.h>
-#include <iostream>
 #include <vector>
 
 // clang-format off
@@ -21,23 +25,29 @@ for b in range(A.shape[0]): # b indexes both A and B, or B.shape[0], which must 
  */
 // clang-format on
 
-auto print_all(auto... args) {
-  ((fmt::print("{}", fmt::join(args, "")),std::cout << "\n"), ...);
-  std::cout << "\n";
-}
+//constexpr char const lstr[] = "bhwi";
+//auto linput = boost::hana::integral_constant<char const*, lstr>{};
 
+//constexpr char const rstr[] = "bhwj";
+//auto rinput = boost::hana::integral_constant<char const*, rstr>{};
+
+using namespace boost::hana::literals;
 int main() {
   std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
   std::vector B2{2, 5, 0, 1, 5, 7, 9, 2, 2, 3, 5, 1, 7, 5, 6, 3};
   std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdA2{A2.data()};
   std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdB2{B2.data()};
   Matrices m{mdA2, mdB2};
-  constexpr std::string_view input = "bhwi,bhwj->bij";
-  auto [l,r, out] = parse_input(input);
-  Labels<cseq<'b','h','w','i'>,cseq<'b','h','w','j'>, cseq<'b','i','j'>>
-  labels(l, r, out);
-  Einsum ein(labels, m);
+  auto lstr = BOOST_HANA_STRING("bhwi");
+  auto rstr = BOOST_HANA_STRING("bhwj");
+  auto outstr = BOOST_HANA_STRING("bij");
+  Labels labels = make_labels(lstr,rstr,outstr);
 
-  print_all(labels.left,labels.right, m.lidx, m.ridx);
+  Einsum einsum(labels, m);
+  using ein_t = decltype(einsum);
+  auto lm = ein_t::lmap;
+  print_map(ein_t::lmap);
+  print_map(ein_t::rmap);
+
   return 0;
 }
