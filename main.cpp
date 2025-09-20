@@ -18,8 +18,7 @@ for b in range(A.shape[0]): # b indexes both A and B, or B.shape[0], which must 
  */
 // clang-format on
 
-template <typename... T>
-struct TD;
+template <typename... T> struct TD;
 
 int main() {
   std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
@@ -30,28 +29,17 @@ int main() {
   auto lstr = BOOST_HANA_STRING("bhwi");
   auto rstr = BOOST_HANA_STRING("bhwj");
   auto outstr = BOOST_HANA_STRING("bij");
-  Labels labels = make_labels(lstr,rstr,outstr);
-  using labels_t = decltype(labels);
-  auto ll = labels_t::left_labels;
-  auto rr = labels_t::right_labels;
-  auto ol = labels_t::out_labels;
-  auto cl = labels_t::collapsed_labels;
-
+  Labels labels = make_labels(lstr, rstr, outstr);
   Einsum einsum(labels, m);
-  using ein_t = decltype(einsum);
-  //TD<decltype(od)> _;
-  //einsum.eval();
-
-  //print_sequence(ein_t::out_index_list);
-  auto oit = ein_t::output_iterator_label_map;
-  auto cit = ein_t::collapsed_iterator_label_map;
-  std::cout << std::endl;
-  //print_labeled_iterators(oit, ol);
-  //print_labeled_iterators(cit, cl);
-  //print_sequence(ein_t::out_index_list);
-  //TD<decltype(cit)> _;
-
   einsum.eval();
+  auto res = einsum.get_result();
 }
 
-
+/*
+print_sequence(out_indices);
+std::cout << " += ";
+print_sequence(aindices);
+std::cout << " * ";
+print_sequence(bindices);
+std::cout << "\n";
+*/

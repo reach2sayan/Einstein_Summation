@@ -95,9 +95,11 @@ public:
                                      DECAY(Labels)::collapsed_labels);
 
   constexpr Einsum(std::same_as<Labels> auto &&,
-                   std::same_as<Matrices> auto &&) noexcept {}
+                   std::same_as<Matrices> auto &&matrices)
+      : left{matrices.left}, right{matrices.right} {}
   constexpr static auto extents = get_extents(out_dims);
   constexpr void eval() const;
+  constexpr auto get_result() const { return output; }
 
 private:
   constexpr static auto output_size = boost::hana::fold_left(
@@ -105,6 +107,8 @@ private:
   std::array<value_type, output_size> result{};
   std::mdspan<value_type, DECAY(decltype(extents))> output{result.data(),
                                                            extents};
+  DECAY(Matrices)::l_matrix_t left;
+  DECAY(Matrices)::r_matrix_t right;
 };
 
 template <CLabels Labels, CMatrices Matrices>
@@ -116,9 +120,6 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
   boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
     boost::hana::for_each(
         collapsed_iterator_label_map, [&](auto collapsed_indices_map) {
-          // clang-format off
-
-          // clang-format on
           auto get_indices_from_map = [&](auto key) {
             auto found_in_out_map = boost::hana::find(out_indices_map, key);
             if constexpr (!boost::hana::is_nothing(found_in_out_map)) {
@@ -129,27 +130,20 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
               return *found_in_collapsed_map;
             }
           };
-          auto aindices = boost::hana::transform(DECAY(Labels)::left_labels,
+          auto lindices = boost::hana::transform(DECAY(Labels)::left_labels,
                                                  get_indices_from_map);
-          auto bindices = boost::hana::transform(DECAY(Labels)::right_labels,
+          auto rindices = boost::hana::transform(DECAY(Labels)::right_labels,
                                                  get_indices_from_map);
           auto out_indices = boost::hana::values(out_indices_map);
-          print_sequence(out_indices);
-          std::cout << " += ";
-          print_sequence(aindices);
-          std::cout << " * ";
-          print_sequence(bindices);
-          std::cout << "\n";
-          boost::hana::unpack(out_indices, [&](auto... out_indx) {
-            output[out_indx...] += 42;
+
+          boost::hana::unpack(out_indices, [&](auto... out_idx) {
+            boost::hana::unpack(lindices, [&](auto... l_idx) {
+              boost::hana::unpack(rindices, [&](auto... r_idx) {
+                output[out_idx.value...] +=
+                    left[l_idx.value...] * right[r_idx.value...];
+              });
+            });
           });
-          /*
-          std::cout << "(" << boost::hana::at_c<0>(out_indices) << ","
-                    << boost::hana::at_c<1>(out_indices) << ","
-                    << boost::hana::at_c<2>(out_indices) << ") - ("
-                    << boost::hana::at_c<0>(collapsed_indices) << ","
-                    << boost::hana::at_c<1>(collapsed_indices) << ")\n";
-                    */
         });
   });
 }
