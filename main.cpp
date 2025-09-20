@@ -26,11 +26,14 @@ for b in range(A.shape[0]): # b indexes both A and B, or B.shape[0], which must 
 // clang-format on
 
 using namespace boost::hana::literals;
+template <typename... T>
+struct TD;
+
 int main() {
   std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
   std::vector B2{2, 5, 0, 1, 5, 7, 9, 2, 2, 3, 5, 1, 7, 5, 6, 3};
-  std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdA2{A2.data()};
-  std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdB2{B2.data()};
+  std::mdspan<int, std::extents<std::size_t, 2, 2, 2, 2>> mdA2{A2.data()};
+  std::mdspan<int, std::extents<std::size_t, 2, 2, 2, 2>> mdB2{B2.data()};
   Matrices m{mdA2, mdB2};
   auto lstr = BOOST_HANA_STRING("bhwi");
   auto rstr = BOOST_HANA_STRING("bhwj");
@@ -39,9 +42,10 @@ int main() {
 
   Einsum einsum(labels, m);
   using ein_t = decltype(einsum);
-  auto lm = ein_t::lmap;
-  print_map(ein_t::lmap);
-  print_map(ein_t::rmap);
-
-  return 0;
+  using label_t = decltype(labels);
+  print_sequence(ein_t::out_index_list);
+  //TD<decltype(rr)> _;
+  std::cout << "\n";
 }
+
+
