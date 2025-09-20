@@ -55,6 +55,13 @@ public:
   constexpr static auto out_index_list =
       boost::hana::cartesian_product(make_iota(out_dims));
 
+  constexpr static auto collapsed_dims =
+      boost::hana::transform(DECAY(Labels)::collapsed_labels, [](auto k) {
+        return boost::hana::at_key(boost::hana::union_(lmap, rmap), k);
+      });
+  constexpr static auto collapsed_index_list =
+      boost::hana::cartesian_product(make_iota(collapsed_dims));
+
   consteval Einsum(std::same_as<Labels> auto &&,
                    std::same_as<Matrices> auto &&) {}
 };

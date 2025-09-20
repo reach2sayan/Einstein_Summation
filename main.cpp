@@ -43,13 +43,11 @@ int main() {
   auto rr = labels_t::right_labels;
   auto ol = labels_t::out_labels;
 
-  auto alll = boost::hana::sort(boost::hana::concat(ll, rr));
-  auto diff = boost::hana::filter(alll, [&](auto l) {
-        return boost::hana::not_(boost::hana::contains(ol, l));
-    });
-  print_sequence(boost::hana::unique(diff));
   Einsum einsum(labels, m);
   using ein_t = decltype(einsum);
+  print_sequence(ein_t::out_index_list);
+  std::cout << "\n";
+  print_sequence(ein_t::collapsed_index_list);
   //print_sequence(ein_t::out_index_list);
   //TD<decltype(rr)> _;
   std::cout << "\n";
