@@ -7,6 +7,7 @@
 #pragma once
 #include <experimental/mdspan>
 #include <type_traits>
+#include <boost/hana.hpp>
 
 #define FWD(x) std::forward<decltype(x)>(x)
 template <typename T, typename LExt, typename RExt> struct Matrices;

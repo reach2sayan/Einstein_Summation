@@ -5,10 +5,10 @@
 #ifndef EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #define EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #pragma once
-#include <boost/hana.hpp>
 #include "labels.hpp"
 #include "matrices.hpp"
 #include "printers.hpp"
+#include <boost/hana.hpp>
 namespace {
 template <typename Keys, typename Values>
 consteval auto make_map_from_sequences(Keys keys, Values values) {
@@ -48,11 +48,9 @@ consteval auto make_output_iterator_label_map(ValueList iterator_indices,
   return maps;
 }
 
-template<typename Dims>
-consteval auto get_extents(Dims dims) {
-  auto extent = boost::hana::unpack(dims, [](auto... dims) {
-    return std::extents<std::size_t, dims...>();
-  });
+template <typename Dims> consteval auto get_extents(Dims dims) {
+  auto extent = boost::hana::unpack(
+      dims, [](auto... dims) { return std::extents<std::size_t, dims...>(); });
   return extent;
 }
 
@@ -90,17 +88,20 @@ public:
       make_output_iterator_label_map(out_index_list, DECAY(Labels)::out_labels);
 
   constexpr static auto collapsed_iterator_label_map =
-      make_output_iterator_label_map(collapsed_index_list, DECAY(Labels)::collapsed_labels);
+      make_output_iterator_label_map(collapsed_index_list,
+                                     DECAY(Labels)::collapsed_labels);
 
   constexpr Einsum(std::same_as<Labels> auto &&,
                    std::same_as<Matrices> auto &&) noexcept {}
   constexpr static auto extents = get_extents(out_dims);
   constexpr void eval() const;
+
 private:
   constexpr static auto output_size = boost::hana::fold_left(
       out_dims, 1, [](auto x, auto y) { return x * y.value; });
   std::array<value_type, output_size> result{};
-  std::mdspan<value_type, DECAY(decltype(extents))> output{result.data(), extents};
+  std::mdspan<value_type, DECAY(decltype(extents))> output{result.data(),
+                                                           extents};
 };
 
 template <CLabels Labels, CMatrices Matrices>
@@ -109,14 +110,30 @@ Einsum(Labels &&, Matrices &&) -> Einsum<Labels, Matrices>;
 template <CLabels Labels, CMatrices Matrices>
 constexpr void Einsum<Labels, Matrices>::eval() const {
 
-  boost::hana::for_each(out_index_list, [](auto out_index) {
-    boost::hana::for_each(collapsed_index_list, [&](auto collapsed_index) {
-      std::cout << "(" << boost::hana::at_c<0>(out_index) << ","
-                << boost::hana::at_c<1>(out_index) << ","
-                << boost::hana::at_c<2>(out_index) << ") - ("
-                << boost::hana::at_c<0>(collapsed_index) << ","
-                << boost::hana::at_c<1>(collapsed_index) << ")\n";
-    });
+  boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
+    boost::hana::for_each(
+        collapsed_iterator_label_map, [&](auto collapsed_indices_map) {
+          // clang-format off
+
+          // clang-format on
+
+          //auto aindices = boost::hana::transform(DECAY(Labels)::left_labels,
+          //                                       get_indices_from_map);
+          //auto bindices = boost::hana::transform(DECAY(Labels)::right_labels,
+          //                                       get_indices_from_map);
+
+          auto out_indices = boost::hana::values(out_indices_map);
+          boost::hana::unpack(out_indices, [&](auto... out_indx) {
+            output[out_indx...] += 42;
+          });
+          /*
+          std::cout << "(" << boost::hana::at_c<0>(out_indices) << ","
+                    << boost::hana::at_c<1>(out_indices) << ","
+                    << boost::hana::at_c<2>(out_indices) << ") - ("
+                    << boost::hana::at_c<0>(collapsed_indices) << ","
+                    << boost::hana::at_c<1>(collapsed_indices) << ")\n";
+                    */
+        });
   });
 }
 

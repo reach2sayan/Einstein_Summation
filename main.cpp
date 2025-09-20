@@ -42,12 +42,45 @@ int main() {
   //TD<decltype(od)> _;
   //einsum.eval();
 
-  print_sequence(ein_t::out_index_list);
+  //print_sequence(ein_t::out_index_list);
   auto oit = ein_t::output_iterator_label_map;
   auto cit = ein_t::collapsed_iterator_label_map;
   std::cout << std::endl;
-  print_labeled_iterators(oit, ol);
-  print_labeled_iterators(cit, cl);
+  //print_labeled_iterators(oit, ol);
+  //print_labeled_iterators(cit, cl);
+
+  boost::hana::for_each(cit,[](auto&& items) {
+    boost::hana::for_each(items, [](auto&& pair) {
+      auto key = boost::hana::first(pair);
+      auto value = boost::hana::second(pair);
+      std::cout << key << ": " << value << " ";
+    });
+    std::cout << "\n";
+  });
+std::cout << "=========\n";
+  boost::hana::for_each(oit,[](auto&& items) {
+  boost::hana::for_each(items, [](auto&& pair) {
+    auto key = boost::hana::first(pair);
+    auto value = boost::hana::second(pair);
+    std::cout << key << ": " << value << " ";
+  });
+    std::cout << "\n";
+});
+  print_sequence(ein_t::out_index_list);
+  /*
+  auto extract_from_maps = [&](auto key) {
+    auto found_in_collapsed_list =
+        boost::hana::find(cit, key);
+    if constexpr (!boost::hana::is_nothing(found_in_collapsed_list)) {
+      return *found_in_collapsed_list;
+    } else {
+      auto found_in_out_list =
+          boost::hana::find(oit, key);
+      return *found_in_out_list; // Assumes key exists in one of the maps
+    }
+  };*/
+  //TD<decltype(cit)> _;
+
   einsum.eval();
 }
 
