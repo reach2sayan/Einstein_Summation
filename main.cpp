@@ -22,14 +22,14 @@ template <typename... T>
 struct TD;
 
 int main() {
-  std::vector A2{1, 4, 1, 7, 8, 1, 2, 2,};
-  std::vector B2{2, 5, 0, 1, 5, 7, 9, 2,};
-  std::mdspan<int, std::extents<std::size_t, 2, 2>> mdA2{A2.data()};
-  std::mdspan<int, std::extents<std::size_t, 2, 2>> mdB2{B2.data()};
+  std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
+  std::vector B2{2, 5, 0, 1, 5, 7, 9, 2, 2, 3, 5, 1, 7, 5, 6, 3};
+  std::mdspan<int, std::extents<std::size_t, 2, 2, 2, 2>> mdA2{A2.data()};
+  std::mdspan<int, std::extents<std::size_t, 2, 2, 2, 2>> mdB2{B2.data()};
   Matrices m{mdA2, mdB2};
-  auto lstr = BOOST_HANA_STRING("ij");
-  auto rstr = BOOST_HANA_STRING("jk");
-  auto outstr = BOOST_HANA_STRING("ik");
+  auto lstr = BOOST_HANA_STRING("bhwi");
+  auto rstr = BOOST_HANA_STRING("bhwj");
+  auto outstr = BOOST_HANA_STRING("bij");
   Labels labels = make_labels(lstr,rstr,outstr);
   using labels_t = decltype(labels);
   auto ll = labels_t::left_labels;
@@ -48,8 +48,6 @@ int main() {
   std::cout << std::endl;
   print_labeled_iterators(oit, ol);
   print_labeled_iterators(cit, cl);
-
-  auto vv = ein_t::extents;
   einsum.eval();
 }
 

@@ -5,19 +5,18 @@
 #ifndef EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #define EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #pragma once
+#include <boost/hana.hpp>
 #include "labels.hpp"
 #include "matrices.hpp"
 #include "printers.hpp"
-#include <boost/hana.hpp>
 namespace {
 template <typename Keys, typename Values>
 consteval auto make_map_from_sequences(Keys keys, Values values) {
-  auto retmap =
-      boost::hana::unpack(boost::hana::zip(keys, values), [](auto... tuples) {
+  return boost::hana::unpack(
+      boost::hana::zip(keys, values), [](auto... tuples) {
         return boost::hana::make_map(boost::hana::make_pair(
             boost::hana::at_c<0>(tuples), boost::hana::at_c<1>(tuples))...);
       });
-  return retmap;
 }
 
 template <typename LMap, typename RMap>
@@ -49,13 +48,12 @@ consteval auto make_output_iterator_label_map(ValueList iterator_indices,
   return maps;
 }
 
-template <typename Labels, typename LMap, typename RMap>
-consteval auto make_label_and_dim_map(Labels labels, LMap lmap, RMap rmap) {
-  auto retmap = boost::hana::transform(labels, [&](auto key) {
-    auto combined_map = boost::hana::union_(lmap, rmap);
-    return boost::hana::at_key(combined_map, key);
+template<typename Dims>
+consteval auto get_extents(Dims dims) {
+  auto extent = boost::hana::unpack(dims, [](auto... dims) {
+    return std::extents<std::size_t, dims...>();
   });
-  return retmap;
+  return extent;
 }
 
 #define DECAY(x) std::remove_cvref_t<x>
@@ -75,39 +73,34 @@ private:
 
 public:
   constexpr static auto out_dims =
-      make_label_and_dim_map(DECAY(Labels)::out_labels, lmap, rmap);
-
+      boost::hana::transform(DECAY(Labels)::out_labels, [](auto key) {
+        return boost::hana::at_key(boost::hana::union_(lmap, rmap), key);
+      });
   constexpr static auto out_index_list =
       boost::hana::cartesian_product(make_iota(out_dims));
+
+  constexpr static auto collapsed_dims =
+      boost::hana::transform(DECAY(Labels)::collapsed_labels, [](auto key) {
+        return boost::hana::at_key(boost::hana::union_(lmap, rmap), key);
+      });
+  constexpr static auto collapsed_index_list =
+      boost::hana::cartesian_product(make_iota(collapsed_dims));
 
   constexpr static auto output_iterator_label_map =
       make_output_iterator_label_map(out_index_list, DECAY(Labels)::out_labels);
 
-  constexpr static auto collapsed_dims =
-      make_label_and_dim_map(DECAY(Labels)::collapsed_labels, lmap, rmap);
-
-  constexpr static auto collapsed_index_list =
-      boost::hana::cartesian_product(make_iota(collapsed_dims));
-
   constexpr static auto collapsed_iterator_label_map =
-      make_output_iterator_label_map(collapsed_index_list,
-                                     DECAY(Labels)::collapsed_labels);
+      make_output_iterator_label_map(collapsed_index_list, DECAY(Labels)::collapsed_labels);
 
   constexpr Einsum(std::same_as<Labels> auto &&,
                    std::same_as<Matrices> auto &&) noexcept {}
-
+  constexpr static auto extents = get_extents(out_dims);
   constexpr void eval() const;
-
 private:
-  constexpr static auto extents =
-      boost::hana::unpack(out_dims, [](auto... dims) {
-        return std::extents<std::size_t, dims...>();
-      });
   constexpr static auto output_size = boost::hana::fold_left(
       out_dims, 1, [](auto x, auto y) { return x * y.value; });
-  std::array<value_type, output_size> result{value_type{}};
-  std::mdspan<value_type, DECAY(decltype(extents))> output_span{result.data(),
-                                                                extents};
+  std::array<value_type, output_size> result{};
+  std::mdspan<value_type, DECAY(decltype(extents))> output{result.data(), extents};
 };
 
 template <CLabels Labels, CMatrices Matrices>
@@ -115,19 +108,16 @@ Einsum(Labels &&, Matrices &&) -> Einsum<Labels, Matrices>;
 
 template <CLabels Labels, CMatrices Matrices>
 constexpr void Einsum<Labels, Matrices>::eval() const {
-  boost::hana::for_each(out_index_list, [&](auto out_indices) {
-    boost::hana::for_each(collapsed_index_list, [&](auto collapsed_indices) {
-      boost::hana::unpack(out_indices, [&](auto... out_index) {
-        output_span[out_index...] = 5;
-      });
+
+  boost::hana::for_each(out_index_list, [](auto out_index) {
+    boost::hana::for_each(collapsed_index_list, [&](auto collapsed_index) {
+      std::cout << "(" << boost::hana::at_c<0>(out_index) << ","
+                << boost::hana::at_c<1>(out_index) << ","
+                << boost::hana::at_c<2>(out_index) << ") - ("
+                << boost::hana::at_c<0>(collapsed_index) << ","
+                << boost::hana::at_c<1>(collapsed_index) << ")\n";
     });
   });
-  for (auto i = 0; i < output_span.extent(0); ++i) {
-    for (auto j = 0; j < output_span.extent(1); ++j) {
-      std::cout << output_span[i, j] << " ";
-    }
-    std::cout << std::endl;
-  }
 }
 
 #endif // EINSTEIN_SUMMATION2_EINSUM_2_HPP
