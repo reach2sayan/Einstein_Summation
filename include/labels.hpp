@@ -5,7 +5,6 @@
 #ifndef EINSTEIN_SUMMATION2_MATRIX_HPP
 #define EINSTEIN_SUMMATION2_MATRIX_HPP
 
-#include "traits.hpp"
 #include <algorithm>
 #include <array>
 #include <ranges>
