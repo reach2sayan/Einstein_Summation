@@ -23,7 +23,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+      - name: Cache Boost
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-boost-${{ hashFiles('CMakeLists.txt') }}
+          path: /usr/include/boost
+        restore-keys: |
+          ${{ runner.os }}-boost-
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
