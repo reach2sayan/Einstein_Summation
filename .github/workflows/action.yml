@@ -1,15 +1,12 @@
 name: CMake
-
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -18,9 +15,20 @@ jobs:
             build_type: Release
             c_compiler: gcc
             cpp_compiler: g++
+        # Uncomment if you want to support Windows
+        # - os: windows-latest
+        #   build_type: Release
+        #   c_compiler: cl
+        #   cpp_compiler: cl
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update 
+          sudo apt-get install -y libboost-all-dev cmake ninja-build build-essential
 
       - name: Cache CMake files
         uses: actions/cache@v3
@@ -43,6 +51,16 @@ jobs:
         if: runner.os == 'Windows'
         uses: microsoft/setup-msbuild@v1.0.2
 
+      - name: Configure CMake (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          cmake -B ${{ steps.strings.outputs.build-output-dir }} \
+            -DCMAKE_CXX_STANDARD=23 \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -G Ninja \
+            -S ${{ github.workspace }}
       - name: Configure CMake
         if: runner.os != 'Windows'
         shell: bash
