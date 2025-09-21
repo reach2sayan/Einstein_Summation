@@ -40,7 +40,7 @@ std::mdspan<int, std::extents<size_t, 3, 4>> mdB{B.data()};
 
 // Perform matrix multiplication using einsum
 // "ij,jk->ik" represents matrix multiplication in Einstein notation
-auto ein = einsum("ij", "jk", "ik", mdA, mdB);
+make_einsum(ein, "ij,jk->ik", mdA, mdB);
 ein.eval();
 auto result = ein.get_result();
 
@@ -63,7 +63,7 @@ std::mdspan<int, std::extents<size_t, 2, 2>> mdB{B.data()};
 
 // Perform element-wise multiplication (Hadamard product)
 // "ij,ij->ij" represents element-wise multiplication in Einstein notation
-auto ein = einsum("ij", "ij", "ij", mdA, mdB);
+make_einsum(ein, "ij,ij->ij", mdA, mdB);
 ein.eval();
 auto result = ein.get_result();
 
@@ -79,11 +79,11 @@ std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdA{A.data()};
 std::mdspan<int, std::extents<size_t, 2, 2, 2, 2>> mdB{B.data()};
 
 // Sum over 'w' and 'h' dimensions, keeping batch 'b', input 'i', and output 'j'
-auto result = einsum("bhwi", "bhwj", "bij", mdA, mdB);
+make_einsum(result,"bhwi,bhwj->"bij", mdA, mdB);
 result.eval();
 ```
 
-### Matrix Transpose
+### Matrix Transpose [[Not Supported Yet]]
 
 Matrix transpose can be elegantly expressed using einsum by swapping the indices in the output:
 
@@ -106,14 +106,14 @@ Einsum can also be used for element-wise operations on a single tensor by using 
 std::vector mat{1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4}; 
 std::mdspan<int, std::extents<size_t, 4, 4>> mdmat{mat.data()};
 // Element-wise squaring using the same tensor twice 
-auto ein = einsum("ij", "ij", "ij", mdmat, mdmat); 
+make_einsum(ein, "ij,ij->ij", mdmat, mdmat); 
 ein.eval(); 
 auto result = ein.get_result();
 // Result contains squared values: [1, 1, 1, 1, 4, 4, 4, 4, 9, 9, 9, 9, 16, 16, 16, 16]
 ```
 
 
-### Automatic Result Shape Inference
+### Automatic Result Shape Inference [[Not Supported Yet]]
 
 If you omit the result labels, the library will automatically determine the appropriate result shape:
 
