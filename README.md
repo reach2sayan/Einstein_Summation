@@ -115,7 +115,7 @@ auto result = ein.get_result();
 ```
 
 
-### Automatic Result Shape Inference [[Not Supported Yet]]
+### Automatic Result Shape Inference
 
 If you omit the result labels, the library will automatically determine the appropriate result shape:
 
