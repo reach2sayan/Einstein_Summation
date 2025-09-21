@@ -1,326 +1,187 @@
 //
-// Created by sayan on 4/26/25.
+// Created by sayan on 9/19/25.
 //
+
+#ifndef EINSTEIN_SUMMATION2_EINSUM_2_HPP
+#define EINSTEIN_SUMMATION2_EINSUM_2_HPP
 #pragma once
+#include "input_handler.hpp"
+#include "labels.hpp"
+#include "matrices.hpp"
+#include "printers.hpp"
 
-#include "traits.hpp"
-#include <experimental/mdspan>
-#include <memory>
-#include <ostream>
-
-#ifndef NDEBUG
-#include <iostream>
-#endif
-
-namespace Einsum {
-
-template <fixed_string fs> constexpr auto make_labels() {
-  auto make_labels_impl = []<std::size_t... Is>(std::index_sequence<Is...>) {
-    return EinsumTraits::Labels<fs[Is]...>{};
-  };
-  return make_labels_impl(std::make_index_sequence<fs.size()>{});
+#include <boost/hana.hpp>
+namespace {
+template <typename Keys, typename Values>
+consteval auto make_map_from_sequences(Keys &&keys, Values &&values) {
+  return boost::hana::unpack(
+      boost::hana::zip(FWD(keys), FWD(values)), [](auto &&...tuples) {
+        return boost::hana::make_map(boost::hana::make_pair(
+            boost::hana::at_c<0>(tuples), boost::hana::at_c<1>(tuples))...);
+      });
 }
 
-template <fixed_string fs> using label_t = decltype(make_labels<fs>());
-
-template <typename TupleA, typename TupleB> constexpr bool validity_checker() {
-  for (auto &&lmap : EinsumTraits::array_of(TupleA{})) {
-    for (auto &&rmap : EinsumTraits::array_of(TupleB{})) {
-      if (lmap.first == rmap.first && lmap.second != rmap.second)
-        return false;
-    }
-  }
-  return true;
+template <typename LMap, typename RMap>
+consteval bool perform_input_check(LMap &&lmap, RMap &&rmap) {
+  auto common_keys = boost::hana::intersection(FWD(lmap), FWD(rmap));
+  auto ok = boost::hana::all_of(std::move(common_keys), [&](auto &&key) {
+    return lmap[key] == rmap[key];
+  });
+  return ok;
 }
-using namespace EinsumTraits;
-using EinsumTraits::Labels;
-template <typename T, typename MatrixA, typename MatrixB, typename LabelA,
-          typename LabelB, typename LabelR>
-class Einsum;
 
-template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
-          char... CsB, char... CsRes>
-class Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
-             Labels<CsB...>, Labels<CsRes...>> {
-#ifdef NDEBUG
-private:
+template <typename Extents> consteval auto make_iota(Extents &&extents) {
+  auto iotas =
+      boost::hana::transform(std::forward<Extents>(extents), [](auto v) {
+        return boost::hana::unpack(
+            boost::hana::make_range(boost::hana::size_c<0>, v), [](auto... xs) {
+              return boost::hana::tuple_c<std::size_t, xs...>;
+            });
+      });
+  return iotas;
+}
+
+template <typename ValueList, typename Key>
+consteval auto make_output_iterator_label_map(ValueList &&iterator_indices,
+                                              Key &&label) {
+  auto maps = boost::hana::transform(
+      std::forward<ValueList>(iterator_indices), [&](auto &&tup) {
+        auto pairs = boost::hana::zip_with(
+            [](auto &&k, auto &&v) {
+              return boost::hana::make_pair(FWD(k), FWD(v));
+            },
+            FWD(label), FWD(tup));
+        return boost::hana::unpack(std::move(pairs), boost::hana::make_map);
+      });
+  return maps;
+}
+
+template <typename Dims> consteval auto get_extents(Dims &&dims) {
+  auto extent = boost::hana::unpack(
+      dims, [](auto... dims) { return std::extents<std::size_t, dims...>(); });
+  return extent;
+}
+
+#define DECAY(x) std::remove_cvref_t<x>
+#if NDEBUG
+#define PRINT_ITERATION(...)
 #else
-public:
+#define PRINT_ITERATION(lindices, rindices, out_indices)                       \
+  print_sequence(out_indices);                                                 \
+  std::cout << " += ";                                                         \
+  print_sequence(lindices);                                                    \
+  std::cout << " * ";                                                          \
+  print_sequence(rindices);                                                    \
+  std::cout << "\n";
 #endif
-  using left_labels =
-      matrix_with_labeled_dims_t<Matrix<T, DimsA...>, Labels<CsA...>>::dims;
-  using right_labels =
-      matrix_with_labeled_dims_t<Matrix<T, DimsB...>, Labels<CsB...>>::dims;
-  using merged_labels = decltype(std::tuple_cat(std::declval<left_labels>(),
-                                                std::declval<right_labels>()));
-  static_assert(validity_checker<left_labels, right_labels>());
+} // namespace
 
-  using collapsed_dims =
-      typename collapsed_dimensions<Labels<CsA...>, Labels<CsB...>,
-                                    Labels<CsRes...>>::type;
-  using collapsed_labels =
-      extract_labeled_dimensions_t<collapsed_dims, merged_labels>;
-  using output_labels =
-      extract_labeled_dimensions_t<Labels<CsRes...>, merged_labels>;
+template <CLabels Labels, CMatrices Matrices> struct Einsum {
+private:
+  using value_type = DECAY(Matrices)::value_type;
+  constexpr static auto lmap = make_map_from_sequences(
+      DECAY(Labels)::left_labels, DECAY(Matrices)::left_extents);
+  constexpr static auto rmap = make_map_from_sequences(
+      DECAY(Labels)::right_labels, DECAY(Matrices)::right_extents);
+  static_assert(perform_input_check(lmap, rmap), "Input check failed");
 
-  using out_index =
-      map_flatten_tuple_t<cartesian_from_labeled_dims_t<output_labels>>;
-  using collapsed_index =
-      map_flatten_tuple_t<cartesian_from_labeled_dims_t<collapsed_labels>>;
+public:
+  constexpr static auto out_dims =
+      boost::hana::transform(DECAY(Labels)::out_labels, [](auto key) {
+        return boost::hana::at_key(boost::hana::union_(lmap, rmap), key);
+      });
+  constexpr static auto out_index_list =
+      boost::hana::cartesian_product(make_iota(out_dims));
 
-  friend std::ostream &operator<<(std::ostream &out, const Einsum &w) {
+  constexpr static auto collapsed_dims =
+      boost::hana::transform(DECAY(Labels)::collapsed_labels, [](auto key) {
+        return boost::hana::at_key(boost::hana::union_(lmap, rmap), key);
+      });
+  constexpr static auto collapsed_index_list =
+      boost::hana::cartesian_product(make_iota(collapsed_dims));
 
-    auto printer = [&]<typename TupleLike>(TupleLike tpl) {
-      std::apply(
-          [&](auto &&...args) {
-            ((out << std::decay_t<decltype(args)>::label << " "
-                  << std::decay_t<decltype(args)>::dim << "\n"),
-             ...);
-          },
-          tpl);
-    };
-    out << "Left Matrix Labels (with dimensions):\n";
-    printer(left_labels{});
-    out << "Right Matrix Labels (with dimensions):\n";
-    printer(right_labels{});
-    out << "Result Labels (with dimensions):\n";
-    printer(output_labels{});
-    out << "Collapsed Labels (with dimensions):\n";
-    printer(collapsed_labels{});
-    out << "\nLeft Matrix :\n";
-    print_2dmd_span(out, w.matrices.first);
-    out << "Right Matrix :\n";
-    print_2dmd_span(out, w.matrices.second);
+  constexpr static auto output_iterator_label_map =
+      make_output_iterator_label_map(out_index_list, DECAY(Labels)::out_labels);
 
-    return out;
-  }
-  constexpr static std::size_t result_size = tuple_dim_product<output_labels>();
-  constexpr auto print_eval();
+  constexpr static auto collapsed_iterator_label_map =
+      make_output_iterator_label_map(collapsed_index_list,
+                                     DECAY(Labels)::collapsed_labels);
 
-  template <typename MatRes, typename MatL, typename MatR, typename OutIndex,
-            typename LeftIndex, typename RightIndex>
-  constexpr void assign(MatRes &matres, MatL &matl, MatR &matr,
-                        const OutIndex &outidx, const LeftIndex &leftidx,
-                        const RightIndex &rightidx) {
-    for_each_index(outidx, [&](auto &&...outi) {
-      for_each_index(leftidx, [&](auto &&...li) {
-        for_each_index(rightidx, [&](auto &&...ri) {
-          matres[outi...] += matl[li...] * matr[ri...];
+  constexpr Einsum(std::same_as<Labels> auto &&,
+                   std::same_as<Matrices> auto &&matrices)
+      : result{}, output{result.data(), extents}, left{FWD(matrices).left},
+        right{FWD(matrices).right} {}
+  constexpr static auto extents = get_extents(out_dims);
+  constexpr void eval() const;
+  constexpr auto get_result() const { return output; }
+
+private:
+  constexpr static auto output_size = boost::hana::fold_left(
+      out_dims, 1, [](auto x, auto y) { return x * y.value; });
+  std::array<value_type, output_size> result;
+  std::mdspan<value_type, DECAY(decltype(extents))> output;
+  DECAY(Matrices)::l_matrix_t left;
+  DECAY(Matrices)::r_matrix_t right;
+};
+
+template <CLabels Labels, CMatrices Matrices>
+Einsum(Labels &&, Matrices &&) -> Einsum<Labels, Matrices>;
+
+template <CLabels Labels, CMatrices Matrices>
+constexpr void Einsum<Labels, Matrices>::eval() const {
+
+  auto assign_values = [&](auto &&lindices, auto &&rindices,
+                           auto &&out_indices) {
+    boost::hana::unpack(out_indices, [&](auto &&...out_idx) {
+      boost::hana::unpack(lindices, [&](auto &&...l_idx) {
+        boost::hana::unpack(rindices, [&](auto &&...r_idx) {
+          output[out_idx.value...] +=
+              left[l_idx.value...] * right[r_idx.value...];
         });
       });
     });
-  }
-
-  template <typename MatRes, typename Mat, typename OutIndex,
-            typename RightIndex>
-  constexpr void assign_noleft(MatRes &matres, Mat &matr, const OutIndex &out,
-                               const RightIndex &rightidx) {
-    for_each_index(out, [&](auto &&...outi) {
-      for_each_index(rightidx,
-                     [&](auto &&...ri) { matres[outi...] += matr[ri...]; });
+  };
+  if constexpr (boost::hana::size(DECAY(Labels)::collapsed_labels) == 0) {
+    boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
+      auto get_indices_from_map = [&](auto key) {
+        return *boost::hana::find(out_indices_map, key);
+      };
+      auto lindices = boost::hana::transform(DECAY(Labels)::left_labels,
+                                             get_indices_from_map);
+      auto rindices = boost::hana::transform(DECAY(Labels)::right_labels,
+                                             get_indices_from_map);
+      auto out_indices = boost::hana::values(out_indices_map);
+      PRINT_ITERATION(lindices, rindices, out_indices);
+      assign_values(lindices, rindices, out_indices);
+    });
+  } else {
+    boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
+      boost::hana::for_each(
+          collapsed_iterator_label_map, [&](auto collapsed_indices_map) {
+            auto get_indices_from_map = [&](auto &&key) {
+              auto val = boost::hana::concat(
+                  boost::hana::find(out_indices_map, key),
+                  boost::hana::find(collapsed_indices_map, key));
+              return *val;
+            };
+            auto lindices = boost::hana::transform(DECAY(Labels)::left_labels,
+                                                   get_indices_from_map);
+            auto rindices = boost::hana::transform(DECAY(Labels)::right_labels,
+                                                   get_indices_from_map);
+            auto out_indices = boost::hana::values(out_indices_map);
+            PRINT_ITERATION(lindices, rindices, out_indices);
+            assign_values(lindices, rindices, out_indices);
+          });
     });
   }
-
-  template <typename CollapsedTupleIndex, typename OutTupleIndex>
-  consteval auto apply_single_noleft(const CollapsedTupleIndex&, const OutTupleIndex&) {
-    using ridx = flatten_tuple_t<
-        decltype(build_result_tuple<right_labels, output_labels, OutTupleIndex,
-                                    collapsed_labels, CollapsedTupleIndex>())>;
-    assign_noleft(result_span, matrices.second, OutTupleIndex{}, ridx{});
-  }
-
-  template <typename CollapsedTupleIndex, typename OutTupleIndex>
-  constexpr auto apply_single(const CollapsedTupleIndex&, const OutTupleIndex&) {
-    using ridx = flatten_tuple_t<
-        decltype(build_result_tuple<right_labels, output_labels, OutTupleIndex,
-                                    collapsed_labels, CollapsedTupleIndex>())>;
-    using lidx = flatten_tuple_t<
-        decltype(build_result_tuple<left_labels, output_labels, OutTupleIndex,
-                                    collapsed_labels, CollapsedTupleIndex>())>;
-    assign(result_span, matrices.first, matrices.second, OutTupleIndex{},
-           lidx{}, ridx{});
-  }
-
-  template <std::size_t... Dims>
-  constexpr static auto
-  make_mdspan(auto &&data, std::integer_sequence<std::size_t, Dims...>) {
-    return std::mdspan<T, std::extents<std::size_t, Dims...>>{data};
-  }
-
-public:
-  constexpr Einsum(std::mdspan<T, std::extents<size_t, DimsA...>> A,
-                   std::mdspan<T, std::extents<size_t, DimsB...>> B,
-                   fixed_string<sizeof...(CsA)> la,
-                   fixed_string<sizeof...(CsB)> lb,
-                   fixed_string<sizeof...(CsRes)> lres)
-      : matrices{A, B}, lstr{std::move(la)}, rstr{std::move(lb)},
-        resstr{std::move(lres)}, result_matrix{},
-        result_span{make_mdspan(result_matrix, extract_dims<output_labels>())} {
-  }
-
-  constexpr auto eval();
-  constexpr auto get_result() const { return result_span; }
-
-private:
-  const std::pair<std::mdspan<T, std::extents<size_t, DimsA...>>,
-                  std::mdspan<T, std::extents<size_t, DimsB...>>>
-      matrices;
-
-  const fixed_string<sizeof...(CsA)> lstr;
-  const fixed_string<sizeof...(CsB)> rstr;
-  const fixed_string<sizeof...(CsRes)> resstr;
-  T result_matrix[result_size];
-  decltype(make_mdspan(result_matrix,
-                       extract_dims<output_labels>())) result_span;
-};
-
-template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
-          char... CsB, char... CsRes>
-constexpr auto
-Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
-       Labels<CsB...>, Labels<CsRes...>>::print_eval() {
-#ifndef NDEBUG
-  using self = typename std::decay_t<decltype(*this)>;
-  auto apply_single = [&]<typename CollapsedTupleIndex, typename OutTupleIndex>(
-                          const CollapsedTupleIndex&, const OutTupleIndex&) {
-    using ridx = flatten_tuple_t<
-        decltype(build_result_tuple<typename self::right_labels,
-                                    typename self::output_labels, OutTupleIndex,
-                                    typename self::collapsed_labels,
-                                    CollapsedTupleIndex>())>;
-    using lidx = flatten_tuple_t<
-        decltype(build_result_tuple<typename self::left_labels,
-                                    typename self::output_labels, OutTupleIndex,
-                                    typename self::collapsed_labels,
-                                    CollapsedTupleIndex>())>;
-
-    print_named_tuple(OutTupleIndex{}, "A");
-    std::cout << " = ";
-    print_named_tuple(ridx{}, "B1");
-    std::cout << " * ";
-    print_named_tuple(lidx{}, "C1");
-    std::cout << std::endl;
-    int _ = 42;
-  };
-
-  // inner loop
-  auto collapsing_loop = [&]<typename TupleLike>(TupleLike&&) {
-    std::apply(
-        [&](auto &&...args_inner) {
-          (apply_single(args_inner, TupleLike{}), ...);
-        },
-        typename self::collapsed_index{});
-  };
-
-  auto outer_loop = [&](auto &&...args) { (collapsing_loop(args), ...); };
-  std::apply(std::move(outer_loop), typename self::out_index{});
-#endif
-}
-template <typename T, size_t... DimsA, size_t... DimsB, char... CsA,
-          char... CsB, char... CsRes>
-constexpr auto
-Einsum<T, Matrix<T, DimsA...>, Matrix<T, DimsB...>, Labels<CsA...>,
-       Labels<CsB...>, Labels<CsRes...>>::eval() {
-
-  using self = typename std::decay_t<decltype(*this)>;
-  auto collapsing_loop = [&]<typename TupleLike>(const TupleLike&) {
-    std::apply(
-        [&](auto &&...args_inner) {
-          if constexpr (sizeof...(args_inner) != 0 &&
-                        std::tuple_size_v<left_labels> != 0) {
-            (apply_single(args_inner, TupleLike{}), ...);
-          } else if constexpr (sizeof...(args_inner) == 0 &&
-                               std::tuple_size_v<left_labels> != 0) {
-            using ridx = flatten_tuple_t<
-                decltype(build_result_tuple<
-                         typename self::right_labels,
-                         typename self::output_labels, TupleLike,
-                         typename self::collapsed_labels, std::tuple<>>())>;
-            using lidx = flatten_tuple_t<
-                decltype(build_result_tuple<
-                         typename self::left_labels,
-                         typename self::output_labels, TupleLike,
-                         typename self::collapsed_labels, std::tuple<>>())>;
-            assign(result_span, matrices.first, matrices.second, TupleLike{},
-                   lidx{}, ridx{});
-          } else if constexpr (sizeof...(args_inner) != 0 &&
-                               std::tuple_size_v<left_labels> == 0) {
-            (apply_single_noleft(args_inner, TupleLike{}), ...);
-          } else {
-            static_assert(sizeof...(args_inner) == 0 &&
-                          std::tuple_size_v<left_labels> == 0);
-            using ridx = flatten_tuple_t<
-                decltype(build_result_tuple<
-                         typename self::right_labels,
-                         typename self::output_labels, TupleLike,
-                         typename self::collapsed_labels, std::tuple<>>())>;
-            assign_noleft(result_span, matrices.second, TupleLike{}, ridx{});
-          }
-        },
-        typename self::collapsed_index{});
-  };
-
-  auto outer_loop = [&](auto &&...args) {
-    if constexpr (sizeof...(args) != 0)
-      (collapsing_loop(args), ...);
-  };
-  std::apply(std::move(outer_loop), typename self::out_index{});
 }
 
-template <typename MDSpan, std::size_t... Is>
-consteval auto make_matrix_from_mdspan(std::index_sequence<Is...>) {
-  using T = typename MDSpan::element_type;
-  using Extents = typename MDSpan::extents_type;
-  return Matrix<T, Extents::static_extent(Is)...>{};
-}
+#define make_einsum(name, inputstring, spanA, spanB)                           \
+  auto name = [spanA, spanB]() {                                               \
+    Matrices m{spanA, spanB};                                                  \
+    auto input = BOOST_HANA_STRING(inputstring);                               \
+    auto labels = make_label_from_inputs(input);                               \
+    return Einsum{labels, m};                                                  \
+  }();
 
-template <typename MDSpan> constexpr auto make_matrix_from_mdspan() {
-  constexpr std::size_t rank = MDSpan::extents_type::rank();
-  return make_matrix_from_mdspan<MDSpan>(std::make_index_sequence<rank>{});
-}
-template <typename Label> struct to_fixed_string;
-
-template <char... Cs> struct to_fixed_string<Labels<Cs...>> {
-  static constexpr fixed_string<sizeof...(Cs)> value =
-      fixed_string<sizeof...(Cs)>{std::integer_sequence<char, Cs...>{}};
-};
-
-template <typename Label>
-constexpr auto to_fixed_string_v = to_fixed_string<Label>::value;
-template <fixed_string fsl, fixed_string fsr, fixed_string fsres,
-          typename MDSpanA, typename MDSpanB>
-constexpr auto make_einsum_impl(MDSpanA mdA, MDSpanB mdB) {
-  using T = typename MDSpanA::element_type;
-  using MatA = decltype(make_matrix_from_mdspan<MDSpanA>());
-  using MatB = decltype(make_matrix_from_mdspan<MDSpanB>());
-  using LabelA = label_t<fsl>;
-  using LabelB = label_t<fsr>;
-  if constexpr (fsres.size() == 0) {
-    using LabelR =
-        EinsumTraits::filter_unique_t<decltype(EinsumTraits::union_of(
-            std::declval<LabelA>(), std::declval<LabelB>()))>;
-    auto fre = to_fixed_string_v<LabelR>;
-    return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
-                                                         fre};
-  } else {
-    using LabelR = label_t<fsres>;
-    return Einsum<T, MatA, MatB, LabelA, LabelB, LabelR>{mdA, mdB, fsl, fsr,
-                                                         fsres};
-  }
-}
-
-#define seinsum(right, result, B)                                              \
-  [&]() {                                                                      \
-    using TT = decltype(B)::element_type;                                      \
-    std::vector<TT> empty{};                                                   \
-    std::mdspan<TT, std::extents<size_t, 0>> mdempty{empty.data()};            \
-    return Einsum::make_einsum_impl<"", right, result>(mdempty, B);            \
-  }()
-
-#define einsum(left, right, result, A, B)                                      \
-  Einsum::make_einsum_impl<left, right, result>(A, B)
-
-#define auto_einsum(left, right, A, B)                                         \
-  Einsum::make_einsum_impl<left, right, "">(A, B)
-
-} // namespace Einsum
+#endif // EINSTEIN_SUMMATION2_EINSUM_2_HPP
