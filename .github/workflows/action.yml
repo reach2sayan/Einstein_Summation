@@ -16,6 +16,10 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
 
+          - os: ubuntu-latest
+            build_type: Release
+            c_compiler: clang
+            cpp_compiler: clang++
           #- os: windows-latest
           #  build_type: Release
           #  c_compiler: cl
@@ -29,6 +33,9 @@ jobs:
         run: |
           sudo apt-get update 
           sudo apt-get install -y libboost-all-dev cmake ninja-build build-essential
+          if [[ "${{ matrix.c_compiler }}" == "clang" ]]; then
+            sudo apt-get install -y clang lld
+          fi
 
       - name: Cache Boost
         uses: actions/cache@v3
