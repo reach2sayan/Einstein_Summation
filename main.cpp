@@ -3,23 +3,6 @@
 
 #include <vector>
 
-// clang-format off
-/*
-C = np.einsum('bhwi,bhwj->bij', A, B)
-assert A.shape[0] == B.shape[0]
-assert A.shape[1] == B.shape[1]
-assert A.shape[2] == B.shape[2]
-C = np.zeros((A.shape[0], A.shape[3], B.shape[3]))
-for b in range(A.shape[0]): # b indexes both A and B, or B.shape[0], which must be the same
-  for i in range(A.shape[3]):
-    for j in range(B.shape[3]):
-      # h and w can come from either A or B
-      for h in range(A.shape[1]):
-        for w in range(A.shape[2]):
-          C[b, i, j] += A[b, h, w, i] * B[b, h, w, j]
- */
-// clang-format on
-
 template <typename... T> struct TD;
 int main() {
   //std::vector A2{1, 4, 1, 7, 8, 1, 2, 2, 7, 4, 3, 4, 2, 4, 7, 3};
@@ -46,10 +29,5 @@ int main() {
 }
 
 /*
-print_sequence(out_indices);
-std::cout << " += ";
-print_sequence(aindices);
-std::cout << " * ";
-print_sequence(bindices);
-std::cout << "\n";
+
 */

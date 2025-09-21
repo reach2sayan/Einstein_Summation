@@ -63,6 +63,17 @@ template <typename Dims> consteval auto get_extents(Dims &&dims) {
 }
 
 #define DECAY(x) std::remove_cvref_t<x>
+#if NDEBUG
+#define PRINT_ITERATION(...)
+#else
+#define PRINT_ITERATION(lindices, rindices, out_indices)                       \
+  print_sequence(out_indices);                                                 \
+  std::cout << " += ";                                                         \
+  print_sequence(lindices);                                                    \
+  std::cout << " * ";                                                          \
+  print_sequence(rindices);                                                    \
+  std::cout << "\n";
+#endif
 } // namespace
 
 template <CLabels Labels, CMatrices Matrices> struct Einsum {
@@ -140,6 +151,7 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
       auto rindices = boost::hana::transform(DECAY(Labels)::right_labels,
                                              get_indices_from_map);
       auto out_indices = boost::hana::values(out_indices_map);
+      PRINT_ITERATION(lindices, rindices, out_indices);
       assign_values(lindices, rindices, out_indices);
     });
   } else {
@@ -157,6 +169,7 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
             auto rindices = boost::hana::transform(DECAY(Labels)::right_labels,
                                                    get_indices_from_map);
             auto out_indices = boost::hana::values(out_indices_map);
+            PRINT_ITERATION(lindices, rindices, out_indices);
             assign_values(lindices, rindices, out_indices);
           });
     });
