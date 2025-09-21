@@ -10,7 +10,6 @@ namespace {
 template <typename LLabels, typename RLabels, typename OutLabels>
 consteval auto make_collapsed_labels(LLabels ll, RLabels rl, OutLabels ol) {
 
-
   auto sorted_input_labels = boost::hana::sort(boost::hana::concat(ll, rl));
   auto diff = boost::hana::filter(sorted_input_labels, [&](auto l) {
     return boost::hana::not_(boost::hana::contains(ol, l));

@@ -5,9 +5,9 @@
 #ifndef EINSTEIN_SUMMATION2_MATRICES_HPP
 #define EINSTEIN_SUMMATION2_MATRICES_HPP
 #pragma once
+#include <boost/hana.hpp>
 #include <experimental/mdspan>
 #include <type_traits>
-#include <boost/hana.hpp>
 
 #define FWD(x) std::forward<decltype(x)>(x)
 template <typename T, typename LExt, typename RExt> struct Matrices;

@@ -15,8 +15,7 @@ namespace {
 template <typename Keys, typename Values>
 consteval auto make_map_from_sequences(Keys &&keys, Values &&values) {
   return boost::hana::unpack(
-      boost::hana::zip(std::forward<Keys>(keys), std::forward<Values>(values)),
-      [](auto &&...tuples) {
+      boost::hana::zip(FWD(keys), FWD(values)), [](auto &&...tuples) {
         return boost::hana::make_map(boost::hana::make_pair(
             boost::hana::at_c<0>(tuples), boost::hana::at_c<1>(tuples))...);
       });
@@ -24,8 +23,7 @@ consteval auto make_map_from_sequences(Keys &&keys, Values &&values) {
 
 template <typename LMap, typename RMap>
 consteval bool perform_input_check(LMap &&lmap, RMap &&rmap) {
-  auto common_keys = boost::hana::intersection(std::forward<LMap>(lmap),
-                                               std::forward<RMap>(rmap));
+  auto common_keys = boost::hana::intersection(FWD(lmap), FWD(rmap));
   auto ok = boost::hana::all_of(std::move(common_keys), [&](auto &&key) {
     return lmap[key] == rmap[key];
   });
@@ -49,8 +47,10 @@ consteval auto make_output_iterator_label_map(ValueList &&iterator_indices,
   auto maps = boost::hana::transform(
       std::forward<ValueList>(iterator_indices), [&](auto &&tup) {
         auto pairs = boost::hana::zip_with(
-            [](auto k, auto v) { return boost::hana::make_pair(k, v); },
-            std::forward<Key>(label), tup);
+            [](auto &&k, auto &&v) {
+              return boost::hana::make_pair(FWD(k), FWD(v));
+            },
+            FWD(label), FWD(tup));
         return boost::hana::unpack(std::move(pairs), boost::hana::make_map);
       });
   return maps;
@@ -109,7 +109,8 @@ public:
 
   constexpr Einsum(std::same_as<Labels> auto &&,
                    std::same_as<Matrices> auto &&matrices)
-      : left{matrices.left}, right{matrices.right} {}
+      : result{}, output{result.data(), extents}, left{FWD(matrices).left},
+        right{FWD(matrices).right} {}
   constexpr static auto extents = get_extents(out_dims);
   constexpr void eval() const;
   constexpr auto get_result() const { return output; }
@@ -117,9 +118,8 @@ public:
 private:
   constexpr static auto output_size = boost::hana::fold_left(
       out_dims, 1, [](auto x, auto y) { return x * y.value; });
-  std::array<value_type, output_size> result{};
-  std::mdspan<value_type, DECAY(decltype(extents))> output{result.data(),
-                                                           extents};
+  std::array<value_type, output_size> result;
+  std::mdspan<value_type, DECAY(decltype(extents))> output;
   DECAY(Matrices)::l_matrix_t left;
   DECAY(Matrices)::r_matrix_t right;
 };
