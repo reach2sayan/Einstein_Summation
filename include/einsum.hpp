@@ -13,40 +13,46 @@
 #include <boost/hana.hpp>
 namespace {
 template <typename Keys, typename Values>
-consteval auto make_map_from_sequences(Keys keys, Values values) {
+consteval auto make_map_from_sequences(Keys &&keys, Values &&values) {
   return boost::hana::unpack(
-      boost::hana::zip(keys, values), [](auto... tuples) {
+      boost::hana::zip(std::forward<Keys>(keys), std::forward<Values>(values)),
+      [](auto &&...tuples) {
         return boost::hana::make_map(boost::hana::make_pair(
             boost::hana::at_c<0>(tuples), boost::hana::at_c<1>(tuples))...);
       });
 }
 
 template <typename LMap, typename RMap>
-consteval bool perform_input_check(LMap lmap, RMap rmap) {
-  auto common_keys = boost::hana::intersection(lmap, rmap);
-  auto ok = boost::hana::all_of(
-      common_keys, [&](auto key) { return lmap[key] == rmap[key]; });
+consteval bool perform_input_check(LMap &&lmap, RMap &&rmap) {
+  auto common_keys = boost::hana::intersection(std::forward<LMap>(lmap),
+                                               std::forward<RMap>(rmap));
+  auto ok = boost::hana::all_of(std::move(common_keys), [&](auto &&key) {
+    return lmap[key] == rmap[key];
+  });
   return ok;
 }
 
-template <typename Extents> consteval auto make_iota(Extents extents) {
-  auto iotas = boost::hana::transform(extents, [](auto v) {
-    return boost::hana::unpack(
-        boost::hana::make_range(boost::hana::size_c<0>, v),
-        [](auto... xs) { return boost::hana::tuple_c<int, xs...>; });
-  });
+template <typename Extents> consteval auto make_iota(Extents &&extents) {
+  auto iotas =
+      boost::hana::transform(std::forward<Extents>(extents), [](auto v) {
+        return boost::hana::unpack(
+            boost::hana::make_range(boost::hana::size_c<0>, v), [](auto... xs) {
+              return boost::hana::tuple_c<std::size_t, xs...>;
+            });
+      });
   return iotas;
 }
 
 template <typename ValueList, typename Key>
-consteval auto make_output_iterator_label_map(ValueList iterator_indices,
-                                              Key label) {
-  auto maps = boost::hana::transform(iterator_indices, [&](auto tup) {
-    auto pairs = boost::hana::zip_with(
-        [](auto k, auto v) { return boost::hana::make_pair(k, v); }, label,
-        tup);
-    return boost::hana::unpack(pairs, boost::hana::make_map);
-  });
+consteval auto make_output_iterator_label_map(ValueList &&iterator_indices,
+                                              Key &&label) {
+  auto maps = boost::hana::transform(
+      std::forward<ValueList>(iterator_indices), [&](auto &&tup) {
+        auto pairs = boost::hana::zip_with(
+            [](auto k, auto v) { return boost::hana::make_pair(k, v); },
+            std::forward<Key>(label), tup);
+        return boost::hana::unpack(std::move(pairs), boost::hana::make_map);
+      });
   return maps;
 }
 
@@ -58,9 +64,6 @@ template <typename Dims> consteval auto get_extents(Dims dims) {
 
 #define DECAY(x) std::remove_cvref_t<x>
 } // namespace
-#ifndef NDEBUG
-#define private public
-#endif
 
 template <CLabels Labels, CMatrices Matrices> struct Einsum {
 private:
@@ -118,15 +121,16 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
 
   auto assign_values = [&](auto &&lindices, auto &&rindices,
                            auto &&out_indices) {
-    boost::hana::unpack(out_indices, [&](auto... out_idx) {
-      boost::hana::unpack(lindices, [&](auto... l_idx) {
-        boost::hana::unpack(rindices, [&](auto... r_idx) {
+    boost::hana::unpack(out_indices, [&](auto &&...out_idx) {
+      boost::hana::unpack(lindices, [&](auto &&...l_idx) {
+        boost::hana::unpack(rindices, [&](auto &&...r_idx) {
           output[out_idx.value...] +=
               left[l_idx.value...] * right[r_idx.value...];
         });
       });
     });
   };
+
   if constexpr (boost::hana::size(DECAY(Labels)::collapsed_labels) == 0) {
     boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
       auto get_indices_from_map = [&](auto key) {
@@ -144,7 +148,6 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
     boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
       boost::hana::for_each(
           collapsed_iterator_label_map, [&](auto collapsed_indices_map) {
-
             auto get_indices_from_map = [&](auto key) {
               auto found_in_out_map = boost::hana::find(out_indices_map, key);
               if constexpr (!boost::hana::is_nothing(found_in_out_map)) {
