@@ -1,5 +1,5 @@
 //
-// Created by sayan on 5/6/25.
+// Created by sayan on 9/20/25.
 //
 
 #include "einsum.hpp"
@@ -29,7 +29,7 @@ template <std::size_t N, size_t M> constexpr auto generate_random_matrices() {
   std::mt19937 mersenne_engine{rnd_device()}; // Generates random integers
   std::uniform_int_distribution<int> dist{1, 52};
   auto gen = [&]() { return dist(mersenne_engine); };
-  std::array<int,N*M> A{};
+  std::array<int, N * M> A{};
   std::generate(A.begin(), A.end(), gen);
 
   std::vector<int> B(N * M);
@@ -43,7 +43,7 @@ template <std::size_t N, size_t M> constexpr auto generate_random_matrices() {
 #define MAKE_EINSUM_BENCH(Name, N, M)                                          \
   static void BM_Einsum##Name(benchmark::State &state) {                       \
     auto [A, B, mdA, mdB] = generate_random_matrices<N, M>();                  \
-    auto ein = einsum("ij", "jk", "ik", mdA, mdB);                             \
+    make_einsum(ein, "ij,jk->ik", mdA, mdB);                                   \
     for (auto _ : state) {                                                     \
       ein.eval();                                                              \
     }                                                                          \
@@ -53,7 +53,6 @@ template <std::size_t N, size_t M> constexpr auto generate_random_matrices() {
 #define MAKE_MATMUL_BENCH(Name, N, M)                                          \
   static void BM_MatMul##Name(benchmark::State &state) {                       \
     auto [A, B, mdA, mdB] = generate_random_matrices<N, M>();                  \
-    auto ein = einsum("ij", "jk", "ik", mdA, mdB);                             \
     std::vector<int> out(N * M);                                               \
     std::mdspan<int, std::extents<size_t, N, M>> mdC{out.data()};              \
     for (auto _ : state) {                                                     \
@@ -74,14 +73,15 @@ MAKE_MATMUL_BENCH(B, 3, 3);
 MAKE_MATMUL_BENCH(C, 4, 4);
 MAKE_MATMUL_BENCH(D, 5, 5);
 MAKE_MATMUL_BENCH(E, 6, 6);
-/*
+
 MAKE_MATMUL_BENCH(F, 7, 7);
 MAKE_MATMUL_BENCH(G, 8, 8);
 MAKE_MATMUL_BENCH(H, 9, 9);
+
 MAKE_MATMUL_BENCH(I, 10, 10);
 MAKE_MATMUL_BENCH(J, 11, 11);
 MAKE_MATMUL_BENCH(K, 12, 12);
-*/
+
 MAKE_EINSUM_BENCH(A, 2, 2);
 MAKE_EINSUM_BENCH(B, 3, 3);
 MAKE_EINSUM_BENCH(C, 4, 4);
@@ -91,8 +91,10 @@ MAKE_EINSUM_BENCH(E, 6, 6);
 MAKE_EINSUM_BENCH(F, 7, 7);
 MAKE_EINSUM_BENCH(G, 8, 8);
 MAKE_EINSUM_BENCH(H, 9, 9);
+
 MAKE_EINSUM_BENCH(I, 10, 10);
 MAKE_EINSUM_BENCH(J, 11, 11);
+
 MAKE_EINSUM_BENCH(K, 12, 12);
 */
 BENCHMARK_MAIN();
