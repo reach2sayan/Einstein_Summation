@@ -16,8 +16,8 @@ int main() {
   std::mdspan<int, std::extents<std::size_t, 4, 4>> mdA2{A2.data()};
   std::mdspan<int, std::extents<std::size_t, 4, 4>> mdB2{B2.data()};
   Matrices m{mdA2, mdB2};
-  // auto [l,r,out] = parse_input("ij,jk->ik");
-  make_einsum(einsum, "ij,jk->ik", mdA2, mdB2);
+
+  make_einsum(einsum, "ij,ji", mdA2, mdB2);
   einsum.eval();
   auto res = einsum.get_result();
 
