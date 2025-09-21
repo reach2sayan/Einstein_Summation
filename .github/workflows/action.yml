@@ -15,11 +15,11 @@ jobs:
             build_type: Release
             c_compiler: gcc
             cpp_compiler: g++
-        # Uncomment if you want to support Windows
-        # - os: windows-latest
-        #   build_type: Release
-        #   c_compiler: cl
-        #   cpp_compiler: cl
+
+          - os: windows-latest
+            build_type: Release
+            c_compiler: cl
+            cpp_compiler: cl
 
     steps:
       - uses: actions/checkout@v4
