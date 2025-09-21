@@ -56,7 +56,7 @@ consteval auto make_output_iterator_label_map(ValueList &&iterator_indices,
   return maps;
 }
 
-template <typename Dims> consteval auto get_extents(Dims dims) {
+template <typename Dims> consteval auto get_extents(Dims &&dims) {
   auto extent = boost::hana::unpack(
       dims, [](auto... dims) { return std::extents<std::size_t, dims...>(); });
   return extent;
@@ -130,7 +130,6 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
       });
     });
   };
-
   if constexpr (boost::hana::size(DECAY(Labels)::collapsed_labels) == 0) {
     boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
       auto get_indices_from_map = [&](auto key) {
