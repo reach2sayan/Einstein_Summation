@@ -4,6 +4,8 @@
 A C++23 implementation of the Einstein summation convention for tensor operations. This library allows for concise
 notation of tensor operations through labeled indices, similar to NumPy's einsum function in Python.
 
+Uses [Boost Hana](https://github.com/boostorg/hana) extensibly 
+
 ## Overview
 
 Einstein summation is a powerful notation for expressing operations on multi-dimensional arrays (tensors). This library
