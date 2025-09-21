@@ -45,7 +45,7 @@ jobs:
         id: strings
         shell: bash
         run: |
-          echo "build-output-dir=${GITHUB_WORKSPACE}/build" >> "$GITHUB_OUTPUT"
+          echo "build-output-dir=${GITHUB_WORKSPACE}\build" >> "$GITHUB_OUTPUT"
 
       - name: Create build directory
         run: cmake -E make_directory ${{ steps.strings.outputs.build-output-dir }}
