@@ -35,8 +35,8 @@ jobs:
         with:
           key: ${{ runner.os }}-boost-${{ hashFiles('CMakeLists.txt') }}
           path: /usr/include/boost
-        restore-keys: |
-          ${{ runner.os }}-boost-
+          restore-keys: |
+            ${{ runner.os }}-boost-
       - name: Cache CMake files
         uses: actions/cache@v3
         with:
