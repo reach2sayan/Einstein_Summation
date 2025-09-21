@@ -17,20 +17,35 @@ jobs:
             build_type: Release
             c_compiler: gcc
             cpp_compiler: g++
-        # Uncomment if you want to support Windows
-        # - os: windows-latest
-        #   build_type: Release
-        #   c_compiler: cl
-        #   cpp_compiler: cl
+
+          - os: ubuntu-latest
+            build_type: Release
+            c_compiler: clang
+            cpp_compiler: clang++
+          #- os: windows-latest
+          #  build_type: Release
+          #  c_compiler: cl
+          #  cpp_compiler: cl
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Cache Boost
+        uses: actions/cache@v3
+        with:
+          key: ${{ runner.os }}-boost-${{ hashFiles('CMakeLists.txt') }}
+          path: /usr/include/boost
+          restore-keys: |
+            ${{ runner.os }}-boost-
 
       - name: Install dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update 
           sudo apt-get install -y libboost-all-dev cmake ninja-build build-essential
+          if [[ "${{ matrix.c_compiler }}" == "clang" ]]; then
+            sudo apt-get install -y clang lld
+          fi
 
       - name: Cache CMake files
         uses: actions/cache@v3
@@ -49,9 +64,8 @@ jobs:
         run: |
           echo "build-output-dir=${GITHUB_WORKSPACE}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Setup MSVC Developer Command Prompt
-        if: runner.os == 'Windows'
-        uses: microsoft/setup-msbuild@v1.0.2
+      - name: Create build directory
+        run: cmake -E make_directory ${{ steps.strings.outputs.build-output-dir }}
 
       - name: Configure CMake (Linux)
         if: runner.os == 'Linux'
@@ -63,16 +77,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -G Ninja \
             -S ${{ github.workspace }}
-      - name: Configure CMake
-        if: runner.os != 'Windows'
-        shell: bash
-        run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -DCMAKE_CXX_STANDARD=26
-          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-          -S ${GITHUB_WORKSPACE}
 
       - name: Cache build
         uses: actions/cache@v3
