@@ -134,8 +134,7 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
   if constexpr (boost::hana::size(DECAY(Labels)::collapsed_labels) == 0) {
     boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
       auto get_indices_from_map = [&](auto key) {
-        auto found_in_out_map = boost::hana::find(out_indices_map, key);
-        return *found_in_out_map;
+        return *boost::hana::find(out_indices_map, key);
       };
       auto lindices = boost::hana::transform(DECAY(Labels)::left_labels,
                                              get_indices_from_map);
@@ -148,15 +147,11 @@ constexpr void Einsum<Labels, Matrices>::eval() const {
     boost::hana::for_each(output_iterator_label_map, [&](auto out_indices_map) {
       boost::hana::for_each(
           collapsed_iterator_label_map, [&](auto collapsed_indices_map) {
-            auto get_indices_from_map = [&](auto key) {
-              auto found_in_out_map = boost::hana::find(out_indices_map, key);
-              if constexpr (!boost::hana::is_nothing(found_in_out_map)) {
-                return *found_in_out_map;
-              } else {
-                auto found_in_collapsed_map =
-                    boost::hana::find(collapsed_indices_map, key);
-                return *found_in_collapsed_map;
-              }
+            auto get_indices_from_map = [&](auto &&key) {
+              auto val = boost::hana::concat(
+                  boost::hana::find(out_indices_map, key),
+                  boost::hana::find(collapsed_indices_map, key));
+              return *val;
             };
             auto lindices = boost::hana::transform(DECAY(Labels)::left_labels,
                                                    get_indices_from_map);
